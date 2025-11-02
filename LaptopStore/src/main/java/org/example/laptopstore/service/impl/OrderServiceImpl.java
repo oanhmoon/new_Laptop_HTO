@@ -20,6 +20,7 @@ import org.example.laptopstore.entity.User;
 import org.example.laptopstore.exception.BadRequestException;
 import org.example.laptopstore.exception.NotFoundException;
 import org.example.laptopstore.mapper.OrderMapper;
+import org.example.laptopstore.payment.VNPAYService;
 import org.example.laptopstore.repository.DiscountRepository;
 import org.example.laptopstore.repository.OrderItemsRepository;
 import org.example.laptopstore.repository.OrderRepository;
@@ -36,9 +37,7 @@ import org.example.laptopstore.util.enums.OrderStatus;
 import org.example.laptopstore.util.enums.PaymentMethod;
 import org.example.laptopstore.util.enums.PaymentStatus;
 import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,6 +67,7 @@ public class OrderServiceImpl implements OrderSerivce {
     private final OrderMapper orderMapper;
     private final DiscountRepository discountRepository;
     private final UserRepository userRepository;
+    private final VNPAYService vnpayService;
 
     @Override
     public OrderResponse insertOrder(OrderRequest orderRequest) {
@@ -164,9 +164,85 @@ public class OrderServiceImpl implements OrderSerivce {
         }
     }
 
+    //@Override
+//    public PageResponse<HistoryOrder> getHistoryOrders(Pageable pageable, Long userId,OrderStatus status,String sort) {
+//        Page<Order> pageOrder = orderRepository.findOrders(userId,status, pageable,sort);
+//        List<HistoryOrder> listHistoryOrders = new ArrayList<>();
+//
+//        for (Order order : pageOrder.getContent()) {
+//            HistoryOrder historyOrder = new HistoryOrder();
+//
+//            List<OrderItem> list = orderItemsRepository.findByOrderId(order.getId());
+//
+//
+//            List<OrderItemResponse> itemResponses = list.stream()
+//                    .map(item -> {
+//                        OrderItemResponse response = new OrderItemResponse();
+//
+//                        response.setOrderItemId(item.getId());
+//                        response.setQuantity(item.getQuantity());
+//                        response.setPriceAtOrderTime(item.getPriceAtOrderTime());
+//                        response.setProductCode(item.getProductCode());
+//                        response.setProductName(item.getProductName());
+//                        response.setProductImage(item.getProductImage());
+//                        response.setProductColor(item.getProductColor());
+//
+//                        if (item.getProductVariant() != null) {
+//                            response.setProductVariantId(item.getProductVariant().getId());
+//
+//                            // ✅ lấy thêm productOptionId từ productVariant.option
+//                            if (item.getProductVariant().getOption() != null) {
+//                                response.setProductOptionId(item.getProductVariant().getOption().getId());
+//                            } else {
+//                                response.setProductOptionId(-1L);
+//                            }
+//
+//                        } else {
+//                            response.setProductVariantId(-1L);
+//                            response.setProductOptionId(-1L);
+//                            response.setProductName("Không xác định");
+//                        }
+//
+//                        return response;
+//                    })
+//                    .toList();
+//
+//
+//
+//            historyOrder.setOrderItems(itemResponses);
+//            historyOrder.setOrderId(order.getId());
+//            historyOrder.setDiscount(order.getDiscount());
+//            historyOrder.setNumberPhone(order.getInfoUserReceive().getPhoneNumber());
+//            historyOrder.setEmail(order.getInfoUserReceive().getEmail());
+//            historyOrder.setOrderStatus(order.getStatus());
+//            historyOrder.setPaymentStatus(order.getPaymentStatus());
+//            historyOrder.setCreatedAt(order.getCreatedAt());
+//            historyOrder.setUpdatedAt(order.getUpdatedAt());
+//
+//            listHistoryOrders.add(historyOrder);
+//        }
+//
+//        Page<HistoryOrder> pageHistoryOrder = new PageImpl<>(
+//                listHistoryOrders,
+//                pageable,
+//                pageOrder.getTotalElements()
+//        );
+//
+//        return new PageResponse<>(pageHistoryOrder);
+//    }
     @Override
-    public PageResponse<HistoryOrder> getHistoryOrders(Pageable pageable, Long userId,OrderStatus status,String sort) {
-        Page<Order> pageOrder = orderRepository.findOrders(userId,status, pageable,sort);
+    public PageResponse<HistoryOrder> getHistoryOrders(Pageable pageable, Long userId, OrderStatus status, String sort) {
+        // ✅ Xác định hướng sắp xếp dựa trên tham số từ frontend
+        String sortField = "updatedAt"; // sắp xếp theo updatedAt để đồng bộ với frontend
+        Sort sortType = (sort != null && sort.equalsIgnoreCase("asc"))
+                ? Sort.by(sortField).ascending()
+                : Sort.by(sortField).descending();
+
+        Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortType);
+
+        // ✅ Lấy dữ liệu từ repository (đã bỏ ORDER BY trong query)
+        Page<Order> pageOrder = orderRepository.findOrders(userId, status, sortedPageable);
+
         List<HistoryOrder> listHistoryOrders = new ArrayList<>();
 
         for (Order order : pageOrder.getContent()) {
@@ -177,7 +253,6 @@ public class OrderServiceImpl implements OrderSerivce {
             List<OrderItemResponse> itemResponses = list.stream()
                     .map(item -> {
                         OrderItemResponse response = new OrderItemResponse();
-
                         response.setOrderItemId(item.getId());
                         response.setQuantity(item.getQuantity());
                         response.setPriceAtOrderTime(item.getPriceAtOrderTime());
@@ -185,17 +260,23 @@ public class OrderServiceImpl implements OrderSerivce {
                         response.setProductName(item.getProductName());
                         response.setProductImage(item.getProductImage());
                         response.setProductColor(item.getProductColor());
+
                         if (item.getProductVariant() != null) {
                             response.setProductVariantId(item.getProductVariant().getId());
+                            if (item.getProductVariant().getOption() != null) {
+                                response.setProductOptionId(item.getProductVariant().getOption().getId());
+                            } else {
+                                response.setProductOptionId(-1L);
+                            }
                         } else {
                             response.setProductVariantId(-1L);
+                            response.setProductOptionId(-1L);
                             response.setProductName("Không xác định");
                         }
 
                         return response;
                     })
                     .toList();
-
 
             historyOrder.setOrderItems(itemResponses);
             historyOrder.setOrderId(order.getId());
@@ -204,12 +285,15 @@ public class OrderServiceImpl implements OrderSerivce {
             historyOrder.setEmail(order.getInfoUserReceive().getEmail());
             historyOrder.setOrderStatus(order.getStatus());
             historyOrder.setPaymentStatus(order.getPaymentStatus());
+            historyOrder.setCreatedAt(order.getCreatedAt());
+            historyOrder.setUpdatedAt(order.getUpdatedAt());
+
             listHistoryOrders.add(historyOrder);
         }
 
         Page<HistoryOrder> pageHistoryOrder = new PageImpl<>(
                 listHistoryOrders,
-                pageable,
+                sortedPageable,
                 pageOrder.getTotalElements()
         );
 
@@ -220,7 +304,8 @@ public class OrderServiceImpl implements OrderSerivce {
     public OrderResponse refund(Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow(()-> new NotFoundException("Order not found"));
         order.setPaymentStatus(PaymentStatus.REFUNDED);
-        order.setStatus(OrderStatus.CANCELLED);
+//        order.setStatus(OrderStatus.CANCELLED);
+        order.setStatus(OrderStatus.PENDING_RETURNED);
         orderRepository.save(order);
         return new OrderResponse(order.getId());
     }
@@ -240,11 +325,28 @@ public class OrderServiceImpl implements OrderSerivce {
         return orders.map(orderMapper::toOrderAdminResponse);
     }
 
+//    @Override
+//    @Transactional
+//    public OrderResponse updateStatus(Long orderId, OrderStatusRequest orderStatusRequest) {
+//        Order order = orderRepository.findById(orderId).orElseThrow(()-> new NotFoundException("Order not found"));
+//        order.setStatus(orderStatusRequest.getStatus());
+//        Order savedOrder = orderRepository.save(order);
+//        return new OrderResponse(savedOrder.getId());
+//    }
     @Override
     @Transactional
     public OrderResponse updateStatus(Long orderId, OrderStatusRequest orderStatusRequest) {
-        Order order = orderRepository.findById(orderId).orElseThrow(()-> new NotFoundException("Order not found"));
-        order.setStatus(orderStatusRequest.getStatus());
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+
+        OrderStatus newStatus = orderStatusRequest.getStatus();
+        order.setStatus(newStatus);
+
+
+        if (newStatus == OrderStatus.COMPLETED && order.getPaymentStatus() != PaymentStatus.PAID) {
+            order.setPaymentStatus(PaymentStatus.PAID);
+        }
+
         Order savedOrder = orderRepository.save(order);
         return new OrderResponse(savedOrder.getId());
     }
@@ -264,45 +366,178 @@ public class OrderServiceImpl implements OrderSerivce {
         return revenueMonths;
     }
 
+//    @Override
+//    @Transactional
+//    public OrderResponse acceptRefund(Long orderId) {
+//        Order order = orderRepository.findById(orderId).orElseThrow(() -> new NotFoundException("Order not found"));
+//        if(order.getPaymentMethod() == PaymentMethod.COD){
+//            throw new BadRequestException("Order with COD payment method is not eligible for refund");
+//        }
+//        if(order.getPaymentStatus() != PaymentStatus.REFUNDED) {
+//            throw new BadRequestException("Order is not eligible for refund");
+//        }
+//        order.setPaymentStatus(PaymentStatus.REFUNDED_SUCCESSFUL);
+//        // Update product stock
+//        BigDecimal totalAmount = BigDecimal.ZERO;
+//        for (OrderItem oi : order.getOrderItems()) {
+//            ProductVariant productVariant = oi.getProductVariant();
+//            Integer currentStock = Optional.ofNullable(productVariant.getStock()).orElse(0);
+//            productVariant.setStock(currentStock + oi.getQuantity());
+//            totalAmount = totalAmount.add(oi.getPriceAtOrderTime().multiply(BigDecimal.valueOf(oi.getQuantity())));
+//            productVariantSerivce.save(productVariant);
+//        }
+//        if(order.getDiscount() != null){
+//            Optional<Discount> discountOptional = discountRepository.findById(order.getDiscount().longValue());
+//            if(discountOptional.isPresent()){
+//                Discount discount = discountOptional.get();
+//                if(discount.getDiscountType() == DiscountType.PERCENT){
+//                    BigDecimal percent = discount.getDiscountValue()
+//                            .divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
+//                    totalAmount = totalAmount.multiply(BigDecimal.ONE.subtract(percent));
+//                } else if(discount.getDiscountType() == DiscountType.FIXED){
+//                    totalAmount = totalAmount.subtract(discount.getDiscountValue());
+//                }
+//            }
+//        }
+//
+//        User user = order.getUser();
+//        BigDecimal currentBalance = Optional.ofNullable(user.getBalance()).orElse(BigDecimal.ZERO);
+//        user.setBalance(currentBalance.add(totalAmount));
+//        order.setStatus(OrderStatus.RETURNED);
+//        userRepository.save(user);
+//        Order savedOrder = orderRepository.save(order);
+//        return new OrderResponse(savedOrder.getId());
+//    }
+
     @Override
     @Transactional
     public OrderResponse acceptRefund(Long orderId) {
-        Order order = orderRepository.findById(orderId).orElseThrow(() -> new NotFoundException("Order not found"));
-        if(order.getPaymentMethod() == PaymentMethod.COD){
-            throw new BadRequestException("Order with COD payment method is not eligible for refund");
-        }
-        if(order.getPaymentStatus() != PaymentStatus.REFUNDED) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+
+        if (order.getPaymentStatus() != PaymentStatus.REFUNDED) {
             throw new BadRequestException("Order is not eligible for refund");
         }
-        order.setPaymentStatus(PaymentStatus.REFUNDED_SUCCESSFUL);
-        // Update product stock
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        for (OrderItem oi : order.getOrderItems()) {
-            ProductVariant productVariant = oi.getProductVariant();
-            Integer currentStock = Optional.ofNullable(productVariant.getStock()).orElse(0);
-            productVariant.setStock(currentStock + oi.getQuantity());
-            totalAmount = totalAmount.add(oi.getPriceAtOrderTime().multiply(BigDecimal.valueOf(oi.getQuantity())));
-            productVariantSerivce.save(productVariant);
+
+        // --- Hoàn tiền theo phương thức thanh toán ---
+        switch (order.getPaymentMethod()) {
+            case VNPAY -> {
+                // ✅ Thực hiện refund qua sandbox VNPAY
+                boolean refundSuccess = vnpayService.refund(order);
+                if (!refundSuccess) {
+                    throw new BadRequestException("VNPAY refund failed (sandbox)");
+                }
+                order.setPaymentStatus(PaymentStatus.REFUNDED_SUCCESSFUL);
+            }
+
+            case IN_APP, COD -> {
+                // ✅ Hoàn tiền nội bộ vào ví người dùng
+                User user = order.getUser();
+                BigDecimal totalAmount = calculateTotalAmount(order);
+                BigDecimal currentBalance = Optional.ofNullable(user.getBalance()).orElse(BigDecimal.ZERO);
+                user.setBalance(currentBalance.add(totalAmount));
+                userRepository.save(user);
+                order.setPaymentStatus(PaymentStatus.REFUNDED_SUCCESSFUL);
+            }
+
+            default -> throw new BadRequestException("Unsupported payment method for refund");
         }
-        if(order.getDiscount() != null){
+
+        // --- Cập nhật tồn kho ---
+        for (OrderItem oi : order.getOrderItems()) {
+            ProductVariant variant = oi.getProductVariant();
+            variant.setStock(Optional.ofNullable(variant.getStock()).orElse(0) + oi.getQuantity());
+            productVariantSerivce.save(variant);
+        }
+
+        // --- Cập nhật trạng thái đơn hàng ---
+        order.setStatus(OrderStatus.RETURNED);
+        orderRepository.save(order);
+
+        return new OrderResponse(order.getId());
+    }
+    private BigDecimal calculateTotalAmount(Order order) {
+        BigDecimal totalAmount = order.getOrderItems().stream()
+                .map(oi -> oi.getPriceAtOrderTime().multiply(BigDecimal.valueOf(oi.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (order.getDiscount() != null) {
             Optional<Discount> discountOptional = discountRepository.findById(order.getDiscount().longValue());
-            if(discountOptional.isPresent()){
+            if (discountOptional.isPresent()) {
                 Discount discount = discountOptional.get();
-                if(discount.getDiscountType() == DiscountType.PERCENT){
+                if (discount.getDiscountType() == DiscountType.PERCENT) {
                     BigDecimal percent = discount.getDiscountValue()
                             .divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
                     totalAmount = totalAmount.multiply(BigDecimal.ONE.subtract(percent));
-                } else if(discount.getDiscountType() == DiscountType.FIXED){
+                } else if (discount.getDiscountType() == DiscountType.FIXED) {
                     totalAmount = totalAmount.subtract(discount.getDiscountValue());
                 }
             }
         }
 
-        User user = order.getUser();
-        BigDecimal currentBalance = Optional.ofNullable(user.getBalance()).orElse(BigDecimal.ZERO);
-        user.setBalance(currentBalance.add(totalAmount));
-        order.setStatus(OrderStatus.CANCELLED);
-        userRepository.save(user);
+        return totalAmount.max(BigDecimal.ZERO); // tránh âm nếu giảm quá nhiều
+    }
+
+
+
+    @Override
+    @Transactional
+    public OrderResponse rejectRefund(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+
+
+        if (order.getPaymentStatus() != PaymentStatus.REFUNDED) {
+            throw new BadRequestException("Order is not in refund requested state");
+        }
+
+
+        order.setStatus(OrderStatus.REJECTED_RETURNED);
+        order.setPaymentStatus(PaymentStatus.PAID);
+
+        Order savedOrder = orderRepository.save(order);
+        return new OrderResponse(savedOrder.getId());
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse acceptReturn(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+
+
+        if (order.getStatus() != OrderStatus.PENDING_RETURNED) {
+            throw new BadRequestException("Only delivered orders can be marked as returned");
+        }
+
+
+        order.setStatus(OrderStatus.CONFIRMED_RETURNED);
+
+        // Nếu bạn muốn, có thể cộng lại stock cho sản phẩm:
+//        for (OrderItem item : order.getOrderItems()) {
+//            ProductVariant variant = item.getProductVariant();
+//            variant.setStock(variant.getStock() + item.getQuantity());
+//            productVariantSerivce.save(variant);
+//        }
+
+        Order savedOrder = orderRepository.save(order);
+        return new OrderResponse(savedOrder.getId());
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse verifyReturn(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+
+
+        if (order.getStatus() != OrderStatus.CONFIRMED_RETURNED) {
+            throw new BadRequestException("Only return-requested orders can be verified as shipped back");
+        }
+
+
+        order.setStatus(OrderStatus.SHIPPED_RETURNED);
+
         Order savedOrder = orderRepository.save(order);
         return new OrderResponse(savedOrder.getId());
     }

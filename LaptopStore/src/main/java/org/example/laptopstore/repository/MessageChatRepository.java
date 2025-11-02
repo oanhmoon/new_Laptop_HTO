@@ -17,7 +17,9 @@ public interface MessageChatRepository extends JpaRepository<Message, Long> {
         m.content,
         m.createdAt,
         m.sender.id,
-        m.receiver.id
+        m.receiver.id,
+        m.messageType,
+        m.mediaUrl
     )
     FROM Message m
     WHERE (m.sender.id = :senderId AND m.receiver.id = :receiverId) 
@@ -25,6 +27,4 @@ public interface MessageChatRepository extends JpaRepository<Message, Long> {
     ORDER BY m.createdAt DESC
 """)
     Page<MessagesDTO> getMessagesById(@Param("senderId") Long senderId, @Param("receiverId") Long receiverId, Pageable pageable);
-
-
 }

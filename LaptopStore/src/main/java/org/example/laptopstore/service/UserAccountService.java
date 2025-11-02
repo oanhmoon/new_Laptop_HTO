@@ -5,6 +5,7 @@ package org.example.laptopstore.service;
 import org.example.laptopstore.dto.request.account.ChangePasswordRequest;
 import org.example.laptopstore.dto.request.account.LoginRequest;
 import org.example.laptopstore.dto.request.account.RegisterRequest;
+import org.example.laptopstore.dto.request.account.ResetPasswordRequest;
 import org.example.laptopstore.dto.response.account.LoginResponse;
 import org.example.laptopstore.dto.response.account.RegisterReponse;
 import org.example.laptopstore.dto.response.user.UserAdminResponse;
@@ -15,13 +16,15 @@ import java.math.BigDecimal;
 import java.text.ParseException;
 
 public interface UserAccountService {
-
+    void forgotPassword(String email);
+    void resetPassword(ResetPasswordRequest request);
     User getUserByUsername(String username);
     User getUserById(Long idUser);
 
     LoginResponse login(LoginRequest request) throws ParseException;
-
-    RegisterReponse register(RegisterRequest registerRequest);
+    boolean existsByEmail(String email);
+    String generateOtp(String email);
+    RegisterReponse register(RegisterRequest request);
 
     User saveUser(User user);
 

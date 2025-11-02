@@ -3,6 +3,8 @@ package org.example.laptopstore.repository;
 import org.example.laptopstore.dto.response.order.RevenueMonth;
 import org.example.laptopstore.dto.response.order.RevenueYear;
 import org.example.laptopstore.entity.Order;
+import org.example.laptopstore.entity.ProductOption;
+import org.example.laptopstore.entity.User;
 import org.example.laptopstore.util.enums.OrderStatus;
 import org.example.laptopstore.util.enums.PaymentMethod;
 import org.example.laptopstore.util.enums.PaymentStatus;
@@ -22,15 +24,15 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                                 @Param("threshold") LocalDateTime threshold);
     @Query("SELECT o FROM Order o WHERE" +
             "(:userId IS NULL OR o.user.id = :userId) AND " +
-            "(:status IS NULL OR o.status = :status) " +
-            "ORDER BY " +
-            "CASE WHEN :sort = 'asc' THEN o.createdAt END ASC, " +
-            "CASE WHEN :sort = 'desc' THEN o.createdAt END DESC")
+            "(:status IS NULL OR o.status = :status) " )
+//            "ORDER BY " +
+//            "CASE WHEN :sort = 'asc' THEN o.createdAt END ASC, " +
+//            "CASE WHEN :sort = 'desc' THEN o.createdAt END DESC")
     Page<Order> findOrders(
             @Param("userId") Long userId,
             @Param("status") OrderStatus status,
-            Pageable pageable,
-            @Param("sort") String sort
+            Pageable pageable
+            //@Param("sort") String sort
     );
 
 
@@ -73,6 +75,21 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "GROUP BY MONTH(oi.order.createdAt) " +
             "ORDER BY MONTH(oi.order.createdAt)")
     List<RevenueMonth> getRevenueByMonth(@Param("year") Integer year);
+
+    @Query("""
+    SELECT CASE WHEN COUNT(oi) > 0 THEN true ELSE false END
+    FROM OrderItem oi
+    JOIN oi.order o
+    JOIN oi.productVariant pv
+    JOIN pv.option po
+    WHERE o.user = :user
+      AND po = :productOption
+      AND o.status = org.example.laptopstore.util.enums.OrderStatus.COMPLETED
+""")
+    boolean hasUserBoughtProduct(
+            @Param("user") User user,
+            @Param("productOption") ProductOption productOption
+    );
 
 
 

@@ -116,4 +116,31 @@ public class OrderController {
                 .data(orderSerivce.acceptRefund(orderId))
                 .build();
     }
+
+    @PutMapping("/reject/refund/{orderId}")
+    public ApiResponse<Object> rejectRefund(@PathVariable Long orderId) {
+        return ApiResponse.builder()
+                .code(HttpStatus.OK.value())
+                .message(SUCCESS_MESSAGE)
+                .data(orderSerivce.rejectRefund(orderId))
+                .build();
+    }
+    @PutMapping("/accept/return/{orderId}")
+    public ApiResponse<Object> acceptReturn(@PathVariable Long orderId) {
+        return ApiResponse.builder()
+                .code(HttpStatus.OK.value())
+                .message(SUCCESS_MESSAGE)
+                .data(orderSerivce.acceptReturn(orderId))
+                .build();
+    }
+
+    @PutMapping("/verify/return/{orderId}")
+    public ApiResponse<Object> verifyReturn(@PathVariable Long orderId) {
+        return ApiResponse.builder()
+                .code(HttpStatus.OK.value())
+                .message(SUCCESS_MESSAGE)
+                .data(orderSerivce.verifyReturn(orderId))
+                .build();
+    }
+
 }

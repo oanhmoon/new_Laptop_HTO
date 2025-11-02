@@ -38,4 +38,8 @@ public interface OrderSerivce {
     List<RevenueMonth> revenueMonth(Integer year);
 
     OrderResponse acceptRefund(Long orderId);
+    OrderResponse rejectRefund(Long orderId);
+    OrderResponse acceptReturn(Long orderId);
+    OrderResponse verifyReturn(Long orderId);
+
 }

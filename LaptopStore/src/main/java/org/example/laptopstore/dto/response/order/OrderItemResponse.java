@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 public class OrderItemResponse {
     private Long orderItemId;
     private Long productVariantId;
+    private Long productOptionId;
     private String productCode;
     private String productName;
     private String productImage;

@@ -14,17 +14,106 @@ import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RequiredArgsConstructor
 @Service
 public class EmailService {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailService.class);
-    private static final String FROM_EMAIL = "tbquoc.jvb@gmail.com";
+    private static final String FROM_EMAIL = "oanhmoon08012003@gmail.com";
     private static final String CURRENCY_LOCALE = "vi_VN";
     private static final String ENCODING = "UTF-8";
 
     private final JavaMailSender mailSender;
+    private final Map<String, String> otpCache = new ConcurrentHashMap<>();
+    private final Set<String> verifiedEmails = ConcurrentHashMap.newKeySet();
+    public void sendOtp(String recipientEmail, String otp) {
+        try {
+            String subject = "Mã OTP xác thực đăng ký";
+            String content = """
+                <html>
+                <body>
+                    <p>Xin chào,</p>
+                    <p>Mã OTP để xác minh đăng ký của bạn là:</p>
+                    <h2 style='color:blue;'>%s</h2>
+                    <p>Vui lòng nhập mã này trong vòng 5 phút.</p>
+                </body>
+                </html>
+            """.formatted(otp);
 
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(FROM_EMAIL);
+            helper.setTo(recipientEmail);
+            helper.setSubject(subject);
+            helper.setText(content, true);
+
+            mailSender.send(message);
+            otpCache.put(recipientEmail, otp);
+        } catch (Exception e) {
+            throw new RuntimeException("Không gửi được OTP: " + e.getMessage());
+        }
+    }
+
+    public boolean verifyRegisterOtp(String email, String otp) {
+        if (!otpCache.containsKey(email)) return false;
+        boolean valid = otpCache.get(email).equals(otp);
+        if (valid) {
+            otpCache.remove(email);
+            verifiedEmails.add(email);
+        }
+        return valid;
+    }
+
+    public boolean isVerified(String email) {
+        return verifiedEmails.contains(email);
+    }
+    public void sendOtpForPasswordReset(String recipientEmail, String otp) {
+        try {
+            String subject = "Mã OTP đặt lại mật khẩu của bạn";
+            String content = buildOtpEmailContent(otp);
+            MimeMessage message = createEmailMessage(recipientEmail, subject, content);
+            mailSender.send(message);
+            LOGGER.info("OTP email sent to {}", recipientEmail);
+            otpCache.put(recipientEmail, otp);
+        } catch (MessagingException e) {
+            LOGGER.error("Failed to send OTP email to {}", recipientEmail, e);
+        }
+    }
+
+    private String buildOtpEmailContent(String otp) {
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Đặt lại mật khẩu</title>
+            <style>
+                body { font-family: Arial, sans-serif; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+                .otp { font-size: 24px; font-weight: bold; color: #e53935; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <p>Bạn đã yêu cầu đặt lại mật khẩu. Mã OTP của bạn là:</p>
+                <p class="otp">%s</p>
+                <p>Hãy sử dụng mã này trong vòng 5 phút để đặt lại mật khẩu.</p>
+                <p>Trân trọng,<br>Đội ngũ bán hàng</p>
+            </div>
+        </body>
+        </html>
+        """.formatted(otp);
+    }
+
+    public boolean verifyOtp(String email, String otp) {
+        if (!otpCache.containsKey(email)) return false;
+        boolean valid = otpCache.get(email).equals(otp);
+        if (valid) otpCache.remove(email);
+        return valid;
+    }
     public void sendPaymentTimeoutNotification(String recipientEmail, String customerName,
                                                String orderId, String expiryTime, List<OrderItem> items) {
         try {

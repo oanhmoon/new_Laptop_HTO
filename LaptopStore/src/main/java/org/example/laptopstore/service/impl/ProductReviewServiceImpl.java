@@ -6,8 +6,10 @@ import org.example.laptopstore.dto.response.productreview.ProductReviewResponse;
 import org.example.laptopstore.entity.ProductOption;
 import org.example.laptopstore.entity.ProductReview;
 import org.example.laptopstore.entity.User;
+import org.example.laptopstore.exception.BadRequestException;
 import org.example.laptopstore.exception.NotFoundException;
 import org.example.laptopstore.mapper.ProductReviewMapper;
+import org.example.laptopstore.repository.OrderRepository;
 import org.example.laptopstore.repository.ProductOptionRepository;
 import org.example.laptopstore.repository.ProductReviewRepository;
 import org.example.laptopstore.repository.UserRepository;
@@ -32,6 +34,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     private final ProductReviewMapper productReviewMapper;
     private final TokenService tokenService;
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
 
     @Override
     public Page<ProductReviewResponse> getAllProductReviewByProduct(Long productOptionId, int page, int size) {
@@ -42,7 +45,9 @@ public class ProductReviewServiceImpl implements ProductReviewService {
 
     @Override
     @Transactional
+
     public ProductReviewResponse createProductReview(ProductReviewRequest productReviewRequest) throws ParseException {
+        // 🔹 Lấy user từ token JWT
         String token = tokenService.getJWT();
         String username = tokenService.getClaim(token, SUB);
         User user = userRepository.findByUsername(username);
@@ -50,12 +55,31 @@ public class ProductReviewServiceImpl implements ProductReviewService {
             throw new NotFoundException(USER_NOT_VALID);
         }
 
+        // 🔹 Lấy product option
         ProductOption productOption = productOptionRepository.findByIdAndIsDeleteFalse(productReviewRequest.getProductOptionId())
                 .orElseThrow(() -> new NotFoundException("Product not found"));
+
+        // 🔹 Kiểm tra user đã mua sản phẩm này chưa
+
+        boolean hasBought = orderRepository.hasUserBoughtProduct(user, productOption);
+        if (!hasBought) {
+            throw new BadRequestException("Bạn chưa mua sản phẩm này nên không thể đánh giá.");
+        }
+
+
+        // 🔹 (Tuỳ chọn) Kiểm tra đã đánh giá sản phẩm này chưa
+//        boolean exists = productReviewRepository.existsByUserAndProductOption(user, productOption);
+//        if (exists) {
+//            throw new BadRequestException("Bạn đã đánh giá sản phẩm này rồi.");
+//        }
+
+        // 🔹 Map và lưu vào DB
         ProductReview productReview = productReviewMapper.mapRequestToEntity(productReviewRequest);
         productReview.setProductOption(productOption);
         productReview.setUser(user);
-        return productReviewMapper.toProductReviewResponse(productReviewRepository.save(productReview)) ;
+
+        ProductReview saved = productReviewRepository.save(productReview);
+        return productReviewMapper.toProductReviewResponse(saved);
     }
 
     @Override

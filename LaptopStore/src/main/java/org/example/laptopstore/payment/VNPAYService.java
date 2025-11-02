@@ -2,7 +2,8 @@ package org.example.laptopstore.payment;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.example.laptopstore.service.PaymentService;
+import org.example.laptopstore.entity.Order;
+//import org.example.laptopstore.service.PaymentService;
 import org.example.laptopstore.service.TokenService;
 import org.example.laptopstore.service.UserAccountService;
 import org.slf4j.Logger;
@@ -10,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -29,7 +31,7 @@ import static org.example.laptopstore.payment.VNPAYConfig.vnp_HashSecret;
 @RequiredArgsConstructor
 public class VNPAYService {
     private final UserAccountService userAccountService;
-    private final PaymentService paymentService;
+    //private final PaymentService paymentService;
     private final TokenService tokenService;
     private static final Logger logger = LoggerFactory.getLogger(VNPAYService.class);
     public String createOrder(HttpServletRequest request, long  amount, String orderInfor){
@@ -99,6 +101,85 @@ public class VNPAYService {
         return paymentUrl;
     }
 
+    public String refundOrder(HttpServletRequest request, String vnp_TxnRef, long amount, String reason) {
+        try {
+            String vnp_Version = "2.1.0";
+            String vnp_Command = "refund";
+            String vnp_TmnCode = VNPAYConfig.vnp_TmnCode;
+            String vnp_IpAddr = VNPAYConfig.getIpAddress(request);
+            String vnp_TransactionType = "02"; // 02: Hoàn toàn bộ giao dịch, theo tài liệu VNPAY
+
+            Map<String, String> vnp_Params = new HashMap<>();
+            vnp_Params.put("vnp_Version", vnp_Version);
+            vnp_Params.put("vnp_Command", vnp_Command);
+            vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
+            vnp_Params.put("vnp_TransactionType", vnp_TransactionType);
+            vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
+            vnp_Params.put("vnp_Amount", String.valueOf(amount * 100)); // nhân 100 như khi tạo thanh toán
+            vnp_Params.put("vnp_OrderInfo", "Refund for order " + vnp_TxnRef + " - Reason: " + reason);
+            vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
+
+            Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+            String vnp_CreateDate = formatter.format(cld.getTime());
+            vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
+
+            // build query & hash
+            List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());
+            Collections.sort(fieldNames);
+            StringBuilder hashData = new StringBuilder();
+            StringBuilder query = new StringBuilder();
+            Iterator<String> itr = fieldNames.iterator();
+
+            while (itr.hasNext()) {
+                String fieldName = itr.next();
+                String fieldValue = vnp_Params.get(fieldName);
+                if (fieldValue != null && fieldValue.length() > 0) {
+                    hashData.append(fieldName).append('=')
+                            .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+                    query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII.toString()))
+                            .append('=')
+                            .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+                    if (itr.hasNext()) {
+                        hashData.append('&');
+                        query.append('&');
+                    }
+                }
+            }
+
+            String vnp_SecureHash = VNPAYConfig.hmacSHA512(VNPAYConfig.vnp_HashSecret, hashData.toString());
+            query.append("&vnp_SecureHash=").append(vnp_SecureHash);
+
+            // URL refund — sandbox chỉ mô phỏng
+            String refundUrl = VNPAYConfig.vnp_ApiUrl + "?" + query;
+            logger.info("Refund request URL: {}", refundUrl);
+
+            // Vì sandbox không thật, bạn có thể mô phỏng phản hồi:
+            return "Refund request created (sandbox). URL: " + refundUrl;
+
+        } catch (Exception e) {
+            logger.error("Error creating refund request: ", e);
+            return "Error: " + e.getMessage();
+        }
+    }
+
+    public boolean refund(Order order) {
+        try {
+            // ✅ Tính tổng tiền cần refund
+            BigDecimal totalAmount = order.getOrderItems().stream()
+                    .map(oi -> oi.getPriceAtOrderTime().multiply(BigDecimal.valueOf(oi.getQuantity())))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            logger.info("Simulating VNPAY refund for order {}, amount={}",
+                    order.getId(), totalAmount);
+
+            // (Sandbox - giả lập)
+            return true;
+        } catch (Exception e) {
+            logger.error("Refund error: ", e);
+            return false;
+        }
+    }
 
 
 }

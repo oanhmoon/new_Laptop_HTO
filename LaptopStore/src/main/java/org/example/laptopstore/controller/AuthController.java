@@ -2,14 +2,14 @@ package org.example.laptopstore.controller;
 
 import lombok.RequiredArgsConstructor;
 
-import org.example.laptopstore.dto.request.account.ChangePasswordRequest;
-import org.example.laptopstore.dto.request.account.LoginRequest;
-import org.example.laptopstore.dto.request.account.RegisterRequest;
+import org.example.laptopstore.dto.request.account.*;
 import org.example.laptopstore.dto.response.ApiResponse;
 
 import org.example.laptopstore.dto.response.account.LoginResponse;
 import org.example.laptopstore.dto.response.account.RegisterReponse;
 import org.example.laptopstore.service.UserAccountService;
+import org.example.laptopstore.service.impl.EmailService;
+import org.example.laptopstore.util.Validation;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,18 +30,86 @@ import static org.example.laptopstore.util.Constant.SUCCESS_MESSAGE;
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
-
+    private final EmailService emailService;
     private final UserAccountService userService;
-
-    @PostMapping("/register")
-    public ApiResponse<Object> register(@RequestBody RegisterRequest request) {
-        RegisterReponse registeredUser = userService.register(request);
+    @PostMapping("/forgot-password")
+    public ApiResponse<Object> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        userService.forgotPassword(request.getEmail());
         return ApiResponse.builder()
-                .message(SUCCESS_MESSAGE)
+                .message("Mã OTP đã được gửi đến email của bạn")
                 .code(SUCCESS)
-                .data(registeredUser)
                 .build();
     }
+
+    @PostMapping("/reset-password")
+    public ApiResponse<Object> resetPassword(@RequestBody ResetPasswordRequest request) {
+
+        // Validate mật khẩu mới
+        if (!Validation.isValidPassword(request.getNewPassword())) {
+            return ApiResponse.builder()
+                    .message("Mật khẩu phải ít nhất 8 ký tự, bao gồm chữ, số và ký tự đặc biệt")
+                    .code(400)
+                    .build();
+        }
+
+        userService.resetPassword(request);
+        return ApiResponse.builder()
+                .message("Đặt lại mật khẩu thành công")
+                .code(SUCCESS)
+                .build();
+    }
+
+    // ------------------ ĐĂNG KÝ TÀI KHOẢN ------------------
+    @PostMapping("/register/request-otp")
+    public ApiResponse<Object> requestOtp(@RequestBody RegisterRequest request) {
+        if (userService.existsByEmail(request.getEmail())) {
+            return ApiResponse.builder()
+                    .code(400)
+                    .message("Email đã được sử dụng")
+                    .build();
+        }
+
+        String otp = userService.generateOtp(request.getEmail());
+        emailService.sendOtp(request.getEmail(), otp);
+
+        return ApiResponse.builder()
+                .code(200)
+                .message("Đã gửi OTP đến email của bạn")
+                .build();
+    }
+
+    @PostMapping("/register/verify-otp")
+    public ApiResponse<Object> verifyOtp(@RequestBody VerifyOtpRequest request) {
+        boolean valid = emailService.verifyRegisterOtp(request.getEmail(), request.getOtp()); // ✅ dùng đúng hàm
+        if (!valid) {
+            return ApiResponse.builder()
+                    .code(400)
+                    .message("OTP không hợp lệ hoặc đã hết hạn")
+                    .build();
+        }
+        return ApiResponse.builder()
+                .code(200)
+                .message("Xác minh OTP thành công")
+                .build();
+    }
+
+    @PostMapping("/register/confirm")
+    public ApiResponse<Object> confirmRegister(@RequestBody RegisterRequest request) {
+        if (!emailService.isVerified(request.getEmail())) {
+            return ApiResponse.builder()
+                    .code(400)
+                    .message("Vui lòng xác minh OTP trước khi đăng ký")
+                    .build();
+        }
+
+        RegisterReponse response = userService.register(request);
+        return ApiResponse.builder()
+                .code(200)
+                .message("Đăng ký thành công")
+                .data(response)
+                .build();
+    }
+
 
     @PostMapping("/login")
     public ApiResponse<Object> login(@RequestBody LoginRequest request) throws ParseException {

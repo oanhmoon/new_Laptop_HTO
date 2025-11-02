@@ -1,11 +1,11 @@
 package org.example.laptopstore.dto;
 
 import lombok.Data;
-
-import java.time.Instant;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Data
+@NoArgsConstructor
 public class MessagesDTO {
     private Long id;
     private Long senderId;
@@ -13,16 +13,17 @@ public class MessagesDTO {
     private String content;
     private LocalDateTime createdAt;
 
-    // Constructor mới, chỉ đúng số trường @Query đang gọi
-    public MessagesDTO(Long id, String content, LocalDateTime createdAt, Long senderId, Long receiverId) {
+    private String messageType; // "TEXT", "IMAGE", "VIDEO"
+    private String mediaUrl;
+
+    // JPQL projection constructor (ensure order matches repository query)
+    public MessagesDTO(Long id, String content, LocalDateTime createdAt, Long senderId, Long receiverId, String messageType, String mediaUrl) {
         this.id = id;
         this.content = content;
         this.createdAt = createdAt;
         this.senderId = senderId;
         this.receiverId = receiverId;
+        this.messageType = messageType;
+        this.mediaUrl = mediaUrl;
     }
 }
-
-
-
-

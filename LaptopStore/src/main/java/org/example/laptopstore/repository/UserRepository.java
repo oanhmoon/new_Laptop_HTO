@@ -27,18 +27,34 @@ public interface UserRepository extends JpaRepository<User, Long> {
     BigDecimal findBalanceByUserId(@Param("userId") Long userId);
 
 
+
+
     @Query("""
     SELECT new org.example.laptopstore.dto.response.message.UserMessage(
-        u.id,
-        u.fullName
+        CASE 
+            WHEN m.sender.id = :adminId THEN m.receiver.id
+            ELSE m.sender.id
+        END,
+        CASE 
+            WHEN m.sender.id = :adminId THEN m.receiver.username
+            ELSE m.sender.username
+        END
     )
     FROM Message m
-    JOIN m.sender u
-    WHERE u.role.name != 'ADMIN'
-    GROUP BY u.id, u.fullName
+    WHERE (m.sender.id = :adminId OR m.receiver.id = :adminId)
+    GROUP BY 
+        CASE 
+            WHEN m.sender.id = :adminId THEN m.receiver.id
+            ELSE m.sender.id
+        END,
+        CASE 
+            WHEN m.sender.id = :adminId THEN m.receiver.username
+            ELSE m.sender.username
+        END
     ORDER BY MAX(m.createdAt) DESC
 """)
-    Page<UserMessage> getAllUser(Pageable pageable);
+    Page<UserMessage> getAllUser(@Param("adminId") Long adminId, Pageable pageable);
+
 
 
     @Query("""

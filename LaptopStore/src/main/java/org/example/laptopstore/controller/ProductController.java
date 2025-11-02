@@ -11,10 +11,12 @@ import org.example.laptopstore.dto.response.product.list.ProductListResponse;
 import org.example.laptopstore.dto.response.product.user.ProductOptionDetailUserResponse;
 import org.example.laptopstore.dto.response.product.user.ProductOptionListUserResponse;
 import org.example.laptopstore.service.ProductService;
+import org.example.laptopstore.service.UserViewHistoryService;
 import org.example.laptopstore.util.Constant;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,14 +28,28 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+
 import java.math.BigDecimal;
 
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/products")
 public class ProductController {
-
     private final ProductService productService;
+    private final UserViewHistoryService userViewHistoryService;
+
+    @PostMapping("/{productId}/view")
+    public ApiResponse<Object> recordProductView(
+            @PathVariable("productId") Long productId,
+            @RequestParam("userId") Long userId
+    ) {
+        userViewHistoryService.recordView(userId, productId);
+        return ApiResponse.builder()
+                .code(HttpStatus.OK.value())
+                .message("Lưu lịch sử xem thành công")
+                .build();
+    }
+
 
     @GetMapping("/page")
     public ApiResponse<Object> getAllProducts(@RequestParam(defaultValue = "") String keyword,

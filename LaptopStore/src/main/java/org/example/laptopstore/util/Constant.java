@@ -15,12 +15,13 @@ public class Constant {
     public static final String PASSWORD_CHANGE_SUCESSFUL = "Password changed successfully";
     // Error Messages
     public static final String REQUEST_FAILD = "Request failed";
-    public static final String USERNAME_EXIST = "Username already exists";
+    public static final String USERNAME_EXIST = "Tên đăng nhập đã tồn tại";
     public static final String BALANCE = "Balance is not enough";
-    public static final String EMAIL_EXIST = "Email already exists";
+    public static final String EMAIL_EXIST = "Email đã tồn tại";
     public static final String DEFAULT_ROLE_NOT_VALID = "Default role not found";
-    public static final String USER_NOT_VALID = "User not found";
-    public static final String INVALID_PASSWORD_FAIL = "Invalid password";
+    public static final String USER_NOT_VALID = "Tài khoản không tồn tại";
+    public static final String INVALID_PASSWORD_FAIL = "Mật khẩu bạn nhập không chính xác";
+    public static final String INVALID_OTP_FAIL = "Mật khẩu bạn nhập không chính xác";
     public static final String NO_CONTENT_MESSAGE = "No content found";
     public static final String ERROR_LIST_EMPTY_MESSAGE = "List is empty";
     public static final String PAYMENT_NOT_VALID = "Payment not found";
