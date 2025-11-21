@@ -1,6 +1,7 @@
 package org.example.laptopstore.mapper;
 
 import lombok.RequiredArgsConstructor;
+import org.example.laptopstore.dto.response.image.ImageThumbnailResponse;
 import org.example.laptopstore.dto.response.product.admin.ProductVariantResponse;
 import org.example.laptopstore.dto.response.product.user.ProductOptionDetailUserResponse;
 import org.example.laptopstore.dto.response.product.user.ProductOptionShortResponse;
@@ -23,6 +24,18 @@ public class ProductOptionMapper {
             return null;
         }
         ProductOptionDetailUserResponse productOptionDetailUserResponse = modelMapper.map(productOption, ProductOptionDetailUserResponse.class);
+        // === MAP OPTION IMAGES ===
+        if (productOption.getImages() != null && !productOption.getImages().isEmpty()) {
+            List<ImageThumbnailResponse> imageResponses = productOption.getImages().stream()
+                    .filter(img -> img.getIsDelete() == null || !img.getIsDelete())
+                    .map(img -> modelMapper.map(img, ImageThumbnailResponse.class))
+                    .toList();
+            productOptionDetailUserResponse.setImages(imageResponses);
+        } else {
+            productOptionDetailUserResponse.setImages(List.of());
+        }
+
+
         ProductUserResponse productUserResponses = productMapper.toProductUserDetail(productOption.getProduct());
         productOptionDetailUserResponse.setProduct(productUserResponses);
         if (productOption.getProductVariants() != null && !productOption.getProductVariants().isEmpty()) {

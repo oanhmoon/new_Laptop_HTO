@@ -3,6 +3,7 @@ package org.example.laptopstore.dto.response.product.user;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.laptopstore.dto.response.image.ImageThumbnailResponse;
 import org.example.laptopstore.dto.response.product.admin.ProductVariantResponse;
 
 import java.math.BigDecimal;
@@ -20,7 +21,7 @@ public class ProductOptionDetailUserResponse {
     List<ProductVariantResponse> productVariants;
 
     List<ProductOptionShortResponse> productOptions;
-
+    List<ImageThumbnailResponse> images;
     private Long salesCount;
     private Integer totalRating;
     private Double ratingAverage;

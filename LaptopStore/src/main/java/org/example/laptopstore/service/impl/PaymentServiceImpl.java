@@ -123,4 +123,30 @@ public class PaymentServiceImpl implements PaymentService {
         return modelMapper.map(paymentRepository.save(payment), PaymentCheck.class);
     }
 
+//    @Override
+//    public PaymentCheck setPaymentCheck(PaymentCheck paymentCheck) {
+//        Order order = orderSerivce.findById(paymentCheck.getOrderId());
+//        order.setPaymentStatus(paymentCheck.getType() == 0 ? PaymentStatus.PAID : PaymentStatus.UNPAID);
+//
+//        // ✅ Lưu mã giao dịch VNPAY từ frontend gửi lên
+//        if (paymentCheck.getVnpTransactionNo() != null) {
+//            order.setVnpTransactionNo(paymentCheck.getVnpTransactionNo());
+//        }
+//        if (paymentCheck.getVnpTxnRef() != null) {
+//            order.setVnpTxnRef(paymentCheck.getVnpTxnRef());
+//        }
+//
+//        orderSerivce.saved(order);
+//
+//        Payment payment = new Payment();
+//        payment.setOrder(order);
+//        payment.setUser(userAccountService.getUserById(paymentCheck.getUserId()));
+//        payment.setAmount(paymentCheck.getAmount());
+//        payment.setPaymentDate(LocalDateTime.now());
+//        paymentRepository.save(payment);
+//
+//        return modelMapper.map(payment, PaymentCheck.class);
+//    }
+
+
 }

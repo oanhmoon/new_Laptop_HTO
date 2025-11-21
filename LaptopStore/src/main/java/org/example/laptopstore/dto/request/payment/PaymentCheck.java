@@ -10,4 +10,7 @@ public class PaymentCheck {
     private Long orderId;
     private Long userId;
     private Integer type;
+//    private String vnpTxnRef;
+//    private String vnpTransactionNo;
+
 }

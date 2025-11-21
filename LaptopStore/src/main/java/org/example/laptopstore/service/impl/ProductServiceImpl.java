@@ -2,29 +2,19 @@ package org.example.laptopstore.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.example.laptopstore.dto.request.product.create.ProductCreateRequest;
+import org.example.laptopstore.dto.request.product.update.ProductOptionUpdateRequest;
 import org.example.laptopstore.dto.request.product.update.ProductUpdateRequest;
+import org.example.laptopstore.dto.request.product.update.ProductVariantUpdateRequest;
 import org.example.laptopstore.dto.response.RecommendationResponse;
 import org.example.laptopstore.dto.response.product.admin.ProductResponse;
 import org.example.laptopstore.dto.response.product.list.ProductListResponse;
 import org.example.laptopstore.dto.response.product.user.ProductOptionDetailUserResponse;
 import org.example.laptopstore.dto.response.product.user.ProductOptionListUserResponse;
-import org.example.laptopstore.entity.Brand;
-import org.example.laptopstore.entity.Category;
-import org.example.laptopstore.entity.ImageThumbnail;
-import org.example.laptopstore.entity.Product;
-import org.example.laptopstore.entity.ProductOption;
-import org.example.laptopstore.entity.ProductVariant;
+import org.example.laptopstore.entity.*;
 import org.example.laptopstore.exception.NotFoundException;
 import org.example.laptopstore.mapper.ProductMapper;
 import org.example.laptopstore.mapper.ProductOptionMapper;
-import org.example.laptopstore.repository.BrandRepository;
-import org.example.laptopstore.repository.CategoryRepository;
-import org.example.laptopstore.repository.ImageThumbnailRepository;
-import org.example.laptopstore.repository.OrderItemsRepository;
-import org.example.laptopstore.repository.ProductOptionRepository;
-import org.example.laptopstore.repository.ProductRepository;
-import org.example.laptopstore.repository.ProductReviewRepository;
-import org.example.laptopstore.repository.ProductVariantRepository;
+import org.example.laptopstore.repository.*;
 import org.example.laptopstore.service.ImageService;
 import org.example.laptopstore.service.ProductService;
 import org.modelmapper.ModelMapper;
@@ -58,6 +48,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductOptionMapper productOptionMapper;
     private final OrderItemsRepository orderItemsRepository;
     private final ProductReviewRepository productReviewRepository;
+    private final ProductOptionImageRepository productOptionImageRepository;
 
     @Override
     public Page<ProductOptionListUserResponse> getAllProducts(String keyword, String categoryId, String brandId, BigDecimal minPrice, BigDecimal maxPrice, int page, int size, String sortBy, String sortDir) {
@@ -84,115 +75,418 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
+//    public ProductResponse createProduct(ProductCreateRequest productRequest) {
+//        Brand brand = brandRepository.findByIdAndIsDeleteFalse(productRequest.getBrandId()).orElseThrow(() -> new NotFoundException("Brand not found"));
+//        Category category = categoryRepository.findByIdAndIsDeleteFalse(productRequest.getCategoryId()).orElseThrow(() -> new NotFoundException("Category not found"));
+//        Product product = modelMapper.map(productRequest, Product.class);
+//        product.setBrand(brand);
+//        product.setCategory(category);
+//        Product productSave = productRepository.save(product);
+//
+//        if(!productRequest.getImageThumbnails().isEmpty()){
+//            List<ImageThumbnail> imageThumbnails =  uploadImageProduct(productSave, productRequest.getImageThumbnails());
+//            List<ImageThumbnail> imageThumbnailList = imageThumbnailRepository.saveAll(imageThumbnails);
+//            productSave.setImages(imageThumbnailList);
+//        }
+//
+//        List<ProductOption> productOptions = productRequest.getOptions().stream().map(optionRequest -> {
+//            ProductOption productOption = modelMapper.map(optionRequest, ProductOption.class);
+//            productOption.setProduct(product);
+//            List<ProductVariant> productVariants = optionRequest.getVariants().stream().map(variantRequest -> {
+//                ProductVariant productVariant = modelMapper.map(variantRequest, ProductVariant.class);
+//                if(variantRequest.getImage() != null){
+//                    String url = imageService.uploadImage(variantRequest.getImage());
+//                    productVariant.setImageUrl(url);
+//                }
+//                productVariant.setOption(productOption);
+//                return productVariant;
+//            }).toList();
+//            productOption.setProductVariants(productVariants);
+//            return productOption;
+//        }).toList();
+//        List<ProductOption> productOptionsSave = productOptionRepository.saveAll(productOptions);
+//        productSave.setProductOptions(productOptionsSave);
+//        return productMapper.toResponse(productSave, false);
+//    }
     public ProductResponse createProduct(ProductCreateRequest productRequest) {
         Brand brand = brandRepository.findByIdAndIsDeleteFalse(productRequest.getBrandId()).orElseThrow(() -> new NotFoundException("Brand not found"));
         Category category = categoryRepository.findByIdAndIsDeleteFalse(productRequest.getCategoryId()).orElseThrow(() -> new NotFoundException("Category not found"));
         Product product = modelMapper.map(productRequest, Product.class);
         product.setBrand(brand);
         product.setCategory(category);
+
+        // Lưu product (chưa có ảnh ở product nữa)
         Product productSave = productRepository.save(product);
 
-        if(!productRequest.getImageThumbnails().isEmpty()){
-            List<ImageThumbnail> imageThumbnails =  uploadImageProduct(productSave, productRequest.getImageThumbnails());
-            List<ImageThumbnail> imageThumbnailList = imageThumbnailRepository.saveAll(imageThumbnails);
-            productSave.setImages(imageThumbnailList);
-        }
-
+        // Map và tạo productOptions (kèm images và variants)
         List<ProductOption> productOptions = productRequest.getOptions().stream().map(optionRequest -> {
             ProductOption productOption = modelMapper.map(optionRequest, ProductOption.class);
-            productOption.setProduct(product);
+            productOption.setProduct(productSave);
+
+            // Upload images for this option
+            if (optionRequest.getImages() != null && !optionRequest.getImages().isEmpty()) {
+                List<ProductOptionImage> optionImages = optionRequest.getImages().stream().map(file -> {
+                    ProductOptionImage img = new ProductOptionImage();
+                    String url = imageService.uploadImage(file);
+                    img.setUrl(url);
+                    img.setProductOption(productOption);
+                    return img;
+                }).toList();
+                productOption.setImages(optionImages);
+            }
+
+            // Map variants
             List<ProductVariant> productVariants = optionRequest.getVariants().stream().map(variantRequest -> {
                 ProductVariant productVariant = modelMapper.map(variantRequest, ProductVariant.class);
-                if(variantRequest.getImage() != null){
-                    String url = imageService.uploadImage(variantRequest.getImage());
-                    productVariant.setImageUrl(url);
+                if (variantRequest.getImage() != null) {
+                    String vUrl = imageService.uploadImage(variantRequest.getImage());
+                    productVariant.setImageUrl(vUrl);
                 }
                 productVariant.setOption(productOption);
                 return productVariant;
             }).toList();
             productOption.setProductVariants(productVariants);
+
             return productOption;
         }).toList();
+
         List<ProductOption> productOptionsSave = productOptionRepository.saveAll(productOptions);
         productSave.setProductOptions(productOptionsSave);
+
         return productMapper.toResponse(productSave, false);
     }
 
     @Override
     @Transactional
-    public ProductResponse updateProduct(Long productId, ProductUpdateRequest productRequest) {
-        Product product = productRepository.findByIdAndIsDeleteFalse(productId).orElseThrow(() -> new NotFoundException("Product not found"));
-        modelMapper.map(productRequest, product);
-        if(!product.getBrand().getId().equals(productRequest.getBrandId())){
-            Brand brand = brandRepository.findByIdAndIsDeleteFalse(productRequest.getBrandId()).orElseThrow(() -> new NotFoundException("Brand not found"));
-            product.setBrand(brand);
-        }
-        if(!product.getCategory().getId().equals(productRequest.getCategoryId())){
-            Category category = categoryRepository.findByIdAndIsDeleteFalse(productRequest.getCategoryId()).orElseThrow(() -> new NotFoundException("Category not found"));
-            product.setCategory(category);
-        }
-        if(productRequest.getImageThumbnails() != null && !productRequest.getImageThumbnails().isEmpty()){
-            List<ImageThumbnail> imageThumbnails = uploadImageProduct(product, productRequest.getImageThumbnails());
-            imageThumbnailRepository.saveAll(imageThumbnails);
-        }
-        if(productRequest.getImageDeleteIds() != null && !productRequest.getImageDeleteIds().isEmpty()){
-            List<ImageThumbnail> imageThumbnails = imageThumbnailRepository.findAllById(productRequest.getImageDeleteIds());
-            imageThumbnails.forEach(imageThumbnail -> {
-                imageService.deleteImage(imageThumbnail.getUrl());
-                imageThumbnailRepository.delete(imageThumbnail);
-            });
-        }
-        if(productRequest.getDeletedOptionIds() != null && !productRequest.getDeletedOptionIds().isEmpty()){
-            List<ProductOption> productOptions = productOptionRepository.findAllById(productRequest.getDeletedOptionIds());
-            productOptions.forEach(productOption -> {
-                productOption.setIsDelete(true);
-                productOptionRepository.save(productOption);
-                productVariantRepository.updateDeleteProductVariantByProductOptionId(productOption.getId());
-            });
-        }
-        if(productRequest.getOptions() != null && !productRequest.getOptions().isEmpty()){
-            List<ProductOption> productOptions = new ArrayList<>();
-            productRequest.getOptions().forEach(optionRequest -> {
-                ProductOption productOption;
-                if(optionRequest.getId() != null){
-                    productOption = productOptionRepository.findById(optionRequest.getId()).orElseThrow(() -> new NotFoundException("Product option not found"));
-                }else{
-                    productOption = new ProductOption();
-                    productOption.setProduct(product);
-                }
-                modelMapper.map(optionRequest, productOption);
-                List<ProductVariant> productVariants = new ArrayList<>();
-                optionRequest.getVariants().forEach(variantRequest -> {
-                    ProductVariant productVariant;
-                    if(variantRequest.getId() != null){
-                        productVariant = productVariantRepository.findById(variantRequest.getId()).orElseThrow(() -> new NotFoundException("Product variant not found"));
-                    }else {
-                        productVariant = new ProductVariant();
-                        productVariant.setOption(productOption);
-                    }
-                    modelMapper.map(variantRequest, productVariant);
-                    if(variantRequest.getImage() != null){
-                        String url = imageService.uploadImage(variantRequest.getImage());
-                        productVariant.setImageUrl(url);
-                    }
-                    productVariants.add(productVariant);
-                });
-                if(optionRequest.getDeletedVariantIds() != null && !optionRequest.getDeletedVariantIds().isEmpty()){
-                    List<ProductVariant> productVariantsDelete = productVariantRepository.findAllById(optionRequest.getDeletedVariantIds());
-                    productVariantsDelete.forEach(productVariant -> {
-                        productVariant.setIsDelete(true);
-                        productVariantRepository.save(productVariant);
-                    });
-                }
-                productOption.setProductVariants(productVariants);
-                productOptions.add(productOption);
-            });
+//    public ProductResponse updateProduct(Long productId, ProductUpdateRequest productRequest) {
+//        Product product = productRepository.findByIdAndIsDeleteFalse(productId).orElseThrow(() -> new NotFoundException("Product not found"));
+//        modelMapper.map(productRequest, product);
+//        if(!product.getBrand().getId().equals(productRequest.getBrandId())){
+//            Brand brand = brandRepository.findByIdAndIsDeleteFalse(productRequest.getBrandId()).orElseThrow(() -> new NotFoundException("Brand not found"));
+//            product.setBrand(brand);
+//        }
+//        if(!product.getCategory().getId().equals(productRequest.getCategoryId())){
+//            Category category = categoryRepository.findByIdAndIsDeleteFalse(productRequest.getCategoryId()).orElseThrow(() -> new NotFoundException("Category not found"));
+//            product.setCategory(category);
+//        }
+//        if(productRequest.getImageThumbnails() != null && !productRequest.getImageThumbnails().isEmpty()){
+//            List<ImageThumbnail> imageThumbnails = uploadImageProduct(product, productRequest.getImageThumbnails());
+//            imageThumbnailRepository.saveAll(imageThumbnails);
+//        }
+//        if(productRequest.getImageDeleteIds() != null && !productRequest.getImageDeleteIds().isEmpty()){
+//            List<ImageThumbnail> imageThumbnails = imageThumbnailRepository.findAllById(productRequest.getImageDeleteIds());
+//            imageThumbnails.forEach(imageThumbnail -> {
+//                imageService.deleteImage(imageThumbnail.getUrl());
+//                imageThumbnailRepository.delete(imageThumbnail);
+//            });
+//        }
+//        if(productRequest.getDeletedOptionIds() != null && !productRequest.getDeletedOptionIds().isEmpty()){
+//            List<ProductOption> productOptions = productOptionRepository.findAllById(productRequest.getDeletedOptionIds());
+//            productOptions.forEach(productOption -> {
+//                productOption.setIsDelete(true);
+//                productOptionRepository.save(productOption);
+//                productVariantRepository.updateDeleteProductVariantByProductOptionId(productOption.getId());
+//            });
+//        }
+//        if(productRequest.getOptions() != null && !productRequest.getOptions().isEmpty()){
+//            List<ProductOption> productOptions = new ArrayList<>();
+//            productRequest.getOptions().forEach(optionRequest -> {
+//                ProductOption productOption;
+//                if(optionRequest.getId() != null){
+//                    productOption = productOptionRepository.findById(optionRequest.getId()).orElseThrow(() -> new NotFoundException("Product option not found"));
+//                }else{
+//                    productOption = new ProductOption();
+//                    productOption.setProduct(product);
+//                }
+//                modelMapper.map(optionRequest, productOption);
+//                List<ProductVariant> productVariants = new ArrayList<>();
+//                optionRequest.getVariants().forEach(variantRequest -> {
+//                    ProductVariant productVariant;
+//                    if(variantRequest.getId() != null){
+//                        productVariant = productVariantRepository.findById(variantRequest.getId()).orElseThrow(() -> new NotFoundException("Product variant not found"));
+//                    }else {
+//                        productVariant = new ProductVariant();
+//                        productVariant.setOption(productOption);
+//                    }
+//                    modelMapper.map(variantRequest, productVariant);
+//                    if(variantRequest.getImage() != null){
+//                        String url = imageService.uploadImage(variantRequest.getImage());
+//                        productVariant.setImageUrl(url);
+//                    }
+//                    productVariants.add(productVariant);
+//                });
+//                if(optionRequest.getDeletedVariantIds() != null && !optionRequest.getDeletedVariantIds().isEmpty()){
+//                    List<ProductVariant> productVariantsDelete = productVariantRepository.findAllById(optionRequest.getDeletedVariantIds());
+//                    productVariantsDelete.forEach(productVariant -> {
+//                        productVariant.setIsDelete(true);
+//                        productVariantRepository.save(productVariant);
+//                    });
+//                }
+//                productOption.setProductVariants(productVariants);
+//                productOptions.add(productOption);
+//            });
+//
+//            product.setProductOptions(productOptions);
+//        }
+//        Product productSave = productRepository.save(product);
+//        return productMapper.toResponse(productSave, false);
+//    }
 
-            product.setProductOptions(productOptions);
+//    public ProductResponse updateProduct(Long productId, ProductUpdateRequest productRequest) {
+//        Product product = productRepository.findByIdAndIsDeleteFalse(productId).orElseThrow(() -> new NotFoundException("Product not found"));
+//        modelMapper.map(productRequest, product);
+//
+//        if(!product.getBrand().getId().equals(productRequest.getBrandId())){
+//            Brand brand = brandRepository.findByIdAndIsDeleteFalse(productRequest.getBrandId()).orElseThrow(() -> new NotFoundException("Brand not found"));
+//            product.setBrand(brand);
+//        }
+//        if(!product.getCategory().getId().equals(productRequest.getCategoryId())){
+//            Category category = categoryRepository.findByIdAndIsDeleteFalse(productRequest.getCategoryId()).orElseThrow(() -> new NotFoundException("Category not found"));
+//            product.setCategory(category);
+//        }
+//
+//        // Xử lý deletedOptionIds (giữ như bạn có)
+//        if(productRequest.getDeletedOptionIds() != null && !productRequest.getDeletedOptionIds().isEmpty()){
+//            List<ProductOption> productOptions = productOptionRepository.findAllById(productRequest.getDeletedOptionIds());
+//            productOptions.forEach(productOption -> {
+//                productOption.setIsDelete(true);
+//                productOptionRepository.save(productOption);
+//                productVariantRepository.updateDeleteProductVariantByProductOptionId(productOption.getId());
+//                // mark images deleted (optional) or delete physically
+//                List<ProductOptionImage> imgs = productOptionImageRepository.findByProductOptionIdAndIsDeleteFalse(productOption.getId());
+//                imgs.forEach(img -> {
+//                    img.setIsDelete(true);
+//                    productOptionImageRepository.save(img);
+//                    imageService.deleteImage(img.getUrl());
+//                });
+//            });
+//        }
+//
+//        if(productRequest.getOptions() != null && !productRequest.getOptions().isEmpty()){
+//            List<ProductOption> productOptions = new ArrayList<>();
+//            productRequest.getOptions().forEach(optionRequest -> {
+//                ProductOption productOption;
+//                if(optionRequest.getId() != null){
+//                    productOption = productOptionRepository.findById(optionRequest.getId()).orElseThrow(() -> new NotFoundException("Product option not found"));
+//                } else {
+//                    productOption = new ProductOption();
+//                    productOption.setProduct(product);
+//                }
+//                modelMapper.map(optionRequest, productOption);
+//
+//                // Handle images for this option: upload new ones
+//                if(optionRequest.getImages() != null && !optionRequest.getImages().isEmpty()){
+//                    List<ProductOptionImage> newImgs = optionRequest.getImages().stream().map(file -> {
+//                        ProductOptionImage img = new ProductOptionImage();
+//                        String url = imageService.uploadImage(file);
+//                        img.setUrl(url);
+//                        img.setProductOption(productOption);
+//                        return img;
+//                    }).toList();
+//                    // If existing images list is null, init
+//                    if(productOption.getImages() == null) productOption.setImages(new ArrayList<>());
+//                    productOption.getImages().addAll(newImgs);
+//                }
+//
+//                // Handle deleted image ids for this option
+//                if (optionRequest.getDeletedImageIds() != null && !optionRequest.getDeletedImageIds().isEmpty()) {
+//                    List<ProductOptionImage> imgsToDelete = productOptionImageRepository.findAllById(optionRequest.getDeletedImageIds());
+//                    imgsToDelete.forEach(img -> {
+//                        img.setIsDelete(true);
+//                        productOptionImageRepository.save(img);
+//                        imageService.deleteImage(img.getUrl());
+//                    });
+//                }
+//
+//                // Variants (existing logic you had)
+//                List<ProductVariant> productVariants = new ArrayList<>();
+//                optionRequest.getVariants().forEach(variantRequest -> {
+//                    ProductVariant productVariant;
+//                    if(variantRequest.getId() != null){
+//                        productVariant = productVariantRepository.findById(variantRequest.getId()).orElseThrow(() -> new NotFoundException("Product variant not found"));
+//                    }else {
+//                        productVariant = new ProductVariant();
+//                        productVariant.setOption(productOption);
+//                    }
+//                    modelMapper.map(variantRequest, productVariant);
+//                    if(variantRequest.getImage() != null){
+//                        String url = imageService.uploadImage(variantRequest.getImage());
+//                        productVariant.setImageUrl(url);
+//                    }
+//                    productVariants.add(productVariant);
+//                });
+//                if(optionRequest.getDeletedVariantIds() != null && !optionRequest.getDeletedVariantIds().isEmpty()){
+//                    List<ProductVariant> productVariantsDelete = productVariantRepository.findAllById(optionRequest.getDeletedVariantIds());
+//                    productVariantsDelete.forEach(productVariant -> {
+//                        productVariant.setIsDelete(true);
+//                        productVariantRepository.save(productVariant);
+//                    });
+//                }
+//                productOption.setProductVariants(productVariants);
+//                productOptions.add(productOption);
+//            });
+//
+//            product.setProductOptions(productOptions);
+//        }
+//
+//        Product productSave = productRepository.save(product);
+//        return productMapper.toResponse(productSave, false);
+//    }
+
+
+
+    public ProductResponse updateProduct(Long productId, ProductUpdateRequest req) {
+
+        Product product = productRepository.findByIdAndIsDeleteFalse(productId)
+                .orElseThrow(() -> new NotFoundException("Product not found"));
+
+        // UPDATE FIELD PRIMITIVE — không map modelMapper
+        product.setName(req.getName());
+        product.setDescription(req.getDescription());
+
+        if (!product.getBrand().getId().equals(req.getBrandId())) {
+            product.setBrand(
+                    brandRepository.findByIdAndIsDeleteFalse(req.getBrandId())
+                            .orElseThrow(() -> new NotFoundException("Brand not found")));
         }
-        Product productSave = productRepository.save(product);
-        return productMapper.toResponse(productSave, false);
+
+        if (!product.getCategory().getId().equals(req.getCategoryId())) {
+            product.setCategory(
+                    categoryRepository.findByIdAndIsDeleteFalse(req.getCategoryId())
+                            .orElseThrow(() -> new NotFoundException("Category not found")));
+        }
+
+        // ===============================================
+        // 1) XÓA PRODUCT OPTION
+        // ===============================================
+        if (req.getDeletedOptionIds() != null) {
+            for (Long opId : req.getDeletedOptionIds()) {
+                ProductOption op = productOptionRepository.findById(opId)
+                        .orElseThrow(() -> new NotFoundException("Option not found"));
+
+                op.setIsDelete(true);
+
+                // soft delete variant
+                productVariantRepository.updateDeleteProductVariantByProductOptionId(opId);
+
+                // soft delete image
+                List<ProductOptionImage> imgs =
+                        productOptionImageRepository.findByProductOptionIdAndIsDeleteFalse(opId);
+
+                for (ProductOptionImage img : imgs) {
+                    img.setIsDelete(true);
+                    imageService.deleteImage(img.getUrl());
+                }
+            }
+        }
+
+        // ===============================================
+        // 2) UPDATE / CREATE PRODUCT OPTIONS
+        // ===============================================
+        for (ProductOptionUpdateRequest oReq : req.getOptions()) {
+
+            ProductOption option;
+
+            if (oReq.getId() != null) {
+                option = productOptionRepository.findById(oReq.getId())
+                        .orElseThrow(() -> new NotFoundException("Option not found"));
+            } else {
+                option = new ProductOption();
+                option.setProduct(product);
+            }
+
+            // UPDATE FIELD PRIMITIVE — không dùng ModelMapper
+            option.setCode(oReq.getCode());
+            option.setPrice(oReq.getPrice());
+            option.setCpu(oReq.getCpu());
+            option.setGpu(oReq.getGpu());
+            option.setRam(oReq.getRam());
+            option.setRamType(oReq.getRamType());
+            option.setRamSlot(oReq.getRamSlot());
+            option.setStorage(oReq.getStorage());
+            option.setStorageUpgrade(oReq.getStorageUpgrade());
+            option.setDisplaySize(oReq.getDisplaySize());
+            option.setDisplayResolution(oReq.getDisplayResolution());
+            option.setDisplayRefreshRate(oReq.getDisplayRefreshRate());
+            option.setDisplayTechnology(oReq.getDisplayTechnology());
+            option.setAudioFeatures(oReq.getAudioFeatures());
+            option.setKeyboard(oReq.getKeyboard());
+            option.setSecurity(oReq.getSecurity());
+            option.setWebcam(oReq.getWebcam());
+            option.setOperatingSystem(oReq.getOperatingSystem());
+            option.setBattery(oReq.getBattery());
+            option.setWeight(oReq.getWeight());
+            option.setDimension(oReq.getDimension());
+            option.setWifi(oReq.getWifi());
+            option.setBluetooth(oReq.getBluetooth());
+            option.setPorts(oReq.getPorts());
+            option.setSpecialFeatures(oReq.getSpecialFeatures());
+
+            // ============ IMAGE DELETE ============
+            if (oReq.getDeletedImageIds() != null) {
+                for (Long imgId : oReq.getDeletedImageIds()) {
+                    ProductOptionImage img = productOptionImageRepository.findById(imgId)
+                            .orElseThrow();
+                    img.setIsDelete(true);
+                    imageService.deleteImage(img.getUrl());
+                }
+            }
+
+            // ============ IMAGE ADD ============
+            if (oReq.getImages() != null) {
+                for (MultipartFile file : oReq.getImages()) {
+                    ProductOptionImage img = new ProductOptionImage();
+                    img.setUrl(imageService.uploadImage(file));
+                    img.setProductOption(option);
+
+                    if (option.getImages() == null) option.setImages(new ArrayList<>());
+                    option.getImages().add(img);
+                }
+            }
+
+            // ============ VARIANT UPDATE ============
+            List<ProductVariant> updatedVariants = new ArrayList<>();
+
+            for (ProductVariantUpdateRequest vReq : oReq.getVariants()) {
+                ProductVariant variant;
+
+                if (vReq.getId() != null) {
+                    variant = productVariantRepository.findById(vReq.getId())
+                            .orElseThrow();
+                } else {
+                    variant = new ProductVariant();
+                    variant.setOption(option);
+                }
+
+                variant.setColor(vReq.getColor());
+                variant.setPriceDiff(vReq.getPriceDiff());
+                variant.setStock(vReq.getStock());
+
+                if (vReq.getImage() != null) {
+                    variant.setImageUrl(imageService.uploadImage(vReq.getImage()));
+                }
+
+                updatedVariants.add(variant);
+            }
+
+            // ============ DELETE VARIANT ============
+            if (oReq.getDeletedVariantIds() != null) {
+                for (Long vId : oReq.getDeletedVariantIds()) {
+                    ProductVariant pv = productVariantRepository.findById(vId)
+                            .orElseThrow();
+                    pv.setIsDelete(true);
+                }
+            }
+
+            option.setProductVariants(updatedVariants);
+        }
+
+        Product saved = productRepository.save(product);
+
+        return productMapper.toResponse(saved, false);
     }
+
+
 
     private List<ImageThumbnail> uploadImageProduct(Product product, List<MultipartFile> listImageThumbnail) {
         List<ImageThumbnail> imageThumbnails = new ArrayList<>();

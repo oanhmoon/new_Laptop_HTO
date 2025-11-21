@@ -129,6 +129,34 @@ public class EmailService {
         }
     }
 
+    public void sendOrderSuccessEmail(String recipientEmail, String customerName,
+                                      String orderId, List<OrderItem> items) {
+        try {
+            String subject = "Xác nhận đặt hàng thành công #" + orderId;
+
+            NumberFormat currencyFormatter = getVietnameseCurrencyFormatter();
+
+            String productRows = buildProductTableRows(items, currencyFormatter);
+            BigDecimal total = calculateTotalAmount(items);
+
+            String content = EmailTemplates.ORDER_SUCCESS_TEMPLATE
+                    .replace("${customerName}", customerName)
+                    .replace("${orderId}", orderId)
+                    .replace("${productRows}", productRows)
+                    .replace("${totalAmount}", currencyFormatter.format(total))
+                    .replace("${orderLink}", "https://yourwebsite.com/orders"); // thay bằng link trang của bạn
+
+            MimeMessage message = createEmailMessage(recipientEmail, subject, content);
+            mailSender.send(message);
+
+            LOGGER.info("Order success email sent to {}", recipientEmail);
+
+        } catch (MessagingException e) {
+            LOGGER.error("Failed to send order success email to {}", recipientEmail, e);
+        }
+    }
+
+
     private MimeMessage createEmailMessage(String recipientEmail, String subject, String content)
             throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
@@ -323,5 +351,59 @@ public class EmailService {
             </body>
             </html>
             """;
+
+        static final String ORDER_SUCCESS_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Đặt hàng thành công</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f6f6f6; padding: 20px; }
+        .container { background: #fff; max-width: 600px; margin: auto; padding: 25px; border-radius: 8px; }
+        h2 { color: #2c3e50; }
+        .footer { margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; color: #777; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { background: #f5f5f5; padding: 12px; text-align: left; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Cảm ơn bạn đã đặt hàng!</h2>
+        <p>Xin chào <strong>${customerName}</strong>,</p>
+        <p>Đơn hàng của bạn đã được tạo thành công với mã <strong>#${orderId}</strong>.</p>
+
+        <h3>Chi tiết đơn hàng:</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 40%;">Sản phẩm</th>
+                    <th style="width: 20%;">Đơn giá</th>
+                    <th style="width: 15%;">SL</th>
+                    <th style="width: 25%;">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${productRows}
+            </tbody>
+        </table>
+
+        <p><strong>Tổng thanh toán: ${totalAmount}</strong></p>
+
+        <p>Chi tiết đơn hàng của bạn:</p>
+//        <a href="${orderLink}" style="padding:10px 18px;background:#4CAF50;color:white;text-decoration:none;border-radius:4px;">
+//            Xem đơn hàng
+//        </a>
+
+        <div class="footer">
+            <p>Cảm ơn bạn đã mua hàng tại cửa hàng chúng tôi.</p>
+            <p>Trân trọng,<br><strong>Đội ngũ bán hàng</strong></p>
+        </div>
+    </div>
+</body>
+</html>
+""";
+
     }
 }

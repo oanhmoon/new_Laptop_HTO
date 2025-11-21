@@ -101,85 +101,139 @@ public class VNPAYService {
         return paymentUrl;
     }
 
-    public String refundOrder(HttpServletRequest request, String vnp_TxnRef, long amount, String reason) {
-        try {
-            String vnp_Version = "2.1.0";
-            String vnp_Command = "refund";
-            String vnp_TmnCode = VNPAYConfig.vnp_TmnCode;
-            String vnp_IpAddr = VNPAYConfig.getIpAddress(request);
-            String vnp_TransactionType = "02"; // 02: Hoàn toàn bộ giao dịch, theo tài liệu VNPAY
+//    public String refundOrder(HttpServletRequest request, String vnp_TxnRef, long amount, String reason) {
+//        try {
+//            String vnp_Version = "2.1.0";
+//            String vnp_Command = "refund";
+//            String vnp_TmnCode = VNPAYConfig.vnp_TmnCode;
+//            String vnp_IpAddr = VNPAYConfig.getIpAddress(request);
+//            String vnp_TransactionType = "02"; // 02: Hoàn toàn bộ giao dịch, theo tài liệu VNPAY
+//
+//            Map<String, String> vnp_Params = new HashMap<>();
+//            vnp_Params.put("vnp_Version", vnp_Version);
+//            vnp_Params.put("vnp_Command", vnp_Command);
+//            vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
+//            vnp_Params.put("vnp_TransactionType", vnp_TransactionType);
+//            vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
+//            vnp_Params.put("vnp_Amount", String.valueOf(amount * 100)); // nhân 100 như khi tạo thanh toán
+//            vnp_Params.put("vnp_OrderInfo", "Refund for order " + vnp_TxnRef + " - Reason: " + reason);
+//            vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
+//
+//            Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+//            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+//            String vnp_CreateDate = formatter.format(cld.getTime());
+//            vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
+//
+//            // build query & hash
+//            List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());
+//            Collections.sort(fieldNames);
+//            StringBuilder hashData = new StringBuilder();
+//            StringBuilder query = new StringBuilder();
+//            Iterator<String> itr = fieldNames.iterator();
+//
+//            while (itr.hasNext()) {
+//                String fieldName = itr.next();
+//                String fieldValue = vnp_Params.get(fieldName);
+//                if (fieldValue != null && fieldValue.length() > 0) {
+//                    hashData.append(fieldName).append('=')
+//                            .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+//                    query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII.toString()))
+//                            .append('=')
+//                            .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+//                    if (itr.hasNext()) {
+//                        hashData.append('&');
+//                        query.append('&');
+//                    }
+//                }
+//            }
+//
+//            String vnp_SecureHash = VNPAYConfig.hmacSHA512(VNPAYConfig.vnp_HashSecret, hashData.toString());
+//            query.append("&vnp_SecureHash=").append(vnp_SecureHash);
+//
+//            // URL refund — sandbox chỉ mô phỏng
+//            String refundUrl = VNPAYConfig.vnp_ApiUrl + "?" + query;
+//            logger.info("Refund request URL: {}", refundUrl);
+//
+//            // Vì sandbox không thật, bạn có thể mô phỏng phản hồi:
+//            return "Refund request created (sandbox). URL: " + refundUrl;
+//
+//        } catch (Exception e) {
+//            logger.error("Error creating refund request: ", e);
+//            return "Error: " + e.getMessage();
+//        }
+//    }
 
-            Map<String, String> vnp_Params = new HashMap<>();
-            vnp_Params.put("vnp_Version", vnp_Version);
-            vnp_Params.put("vnp_Command", vnp_Command);
-            vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
-            vnp_Params.put("vnp_TransactionType", vnp_TransactionType);
-            vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
-            vnp_Params.put("vnp_Amount", String.valueOf(amount * 100)); // nhân 100 như khi tạo thanh toán
-            vnp_Params.put("vnp_OrderInfo", "Refund for order " + vnp_TxnRef + " - Reason: " + reason);
-            vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
+//    public boolean refund(Order order) {
+//        try {
+//            // ✅ Tính tổng tiền cần refund
+//            BigDecimal totalAmount = order.getOrderItems().stream()
+//                    .map(oi -> oi.getPriceAtOrderTime().multiply(BigDecimal.valueOf(oi.getQuantity())))
+//                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+//
+//            logger.info("Simulating VNPAY refund for order {}, amount={}",
+//                    order.getId(), totalAmount);
+//
+//            // (Sandbox - giả lập)
+//            return true;
+//        } catch (Exception e) {
+//            logger.error("Refund error: ", e);
+//            return false;
+//        }
+//    }
 
-            Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-            String vnp_CreateDate = formatter.format(cld.getTime());
-            vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
+//    public boolean refund(Order order) {
+//        try {
+//            if (order.getVnpTransactionNo() == null) {
+//                logger.warn("Order {} has no VNPAY transaction number, cannot refund.", order.getId());
+//                return false;
+//            }
+//
+//            // ✅ Gọi API refund thật
+//            String response = callRefundApi(order.getVnpTxnRef(), order.getVnpTransactionNo(), order.getTotalAmount().longValue(), "Customer refund");
+//            logger.info("Refund response for order {}: {}", order.getId(), response);
+//
+//            return response.contains("00"); // mã thành công của VNPAY
+//        } catch (Exception e) {
+//            logger.error("Refund error: ", e);
+//            return false;
+//        }
+//    }
 
-            // build query & hash
-            List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());
-            Collections.sort(fieldNames);
-            StringBuilder hashData = new StringBuilder();
-            StringBuilder query = new StringBuilder();
-            Iterator<String> itr = fieldNames.iterator();
+//    private String callRefundApi(String vnpTxnRef, String vnpTransactionNo, long amount, String reason) {
+//        try {
+//            Map<String, String> vnp_Params = new HashMap<>();
+//            vnp_Params.put("vnp_Version", "2.1.0");
+//            vnp_Params.put("vnp_Command", "refund");
+//            vnp_Params.put("vnp_TmnCode", VNPAYConfig.vnp_TmnCode);
+//            vnp_Params.put("vnp_TxnRef", vnpTxnRef);
+//            vnp_Params.put("vnp_TransactionNo", vnpTransactionNo);
+//            vnp_Params.put("vnp_Amount", String.valueOf(amount * 100));
+//            vnp_Params.put("vnp_TransactionType", "02");
+//            vnp_Params.put("vnp_OrderInfo", reason);
+//            vnp_Params.put("vnp_CreateBy", "LaptopStore");
+//
+//            String hashData = VNPAYConfig.hashAllFields(vnp_Params);
+//            vnp_Params.put("vnp_SecureHash", hashData);
+//
+//            // ✅ Chuyển Map thành chuỗi query string
+//            StringBuilder urlParams = new StringBuilder();
+//            for (Map.Entry<String, String> entry : vnp_Params.entrySet()) {
+//                if (urlParams.length() > 0) {
+//                    urlParams.append("&");
+//                }
+//                urlParams.append(entry.getKey()).append("=").append(entry.getValue());
+//            }
+//
+//            // Gửi POST request
+//            String response = HttpUtils.post(VNPAYConfig.vnp_ApiUrl, urlParams.toString());
+//            return response;
+//        } catch (Exception e) {
+//            logger.error("Refund API error: ", e);
+//            return "ERROR: " + e.getMessage();
+//        }
+//    }
 
-            while (itr.hasNext()) {
-                String fieldName = itr.next();
-                String fieldValue = vnp_Params.get(fieldName);
-                if (fieldValue != null && fieldValue.length() > 0) {
-                    hashData.append(fieldName).append('=')
-                            .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-                    query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII.toString()))
-                            .append('=')
-                            .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-                    if (itr.hasNext()) {
-                        hashData.append('&');
-                        query.append('&');
-                    }
-                }
-            }
 
-            String vnp_SecureHash = VNPAYConfig.hmacSHA512(VNPAYConfig.vnp_HashSecret, hashData.toString());
-            query.append("&vnp_SecureHash=").append(vnp_SecureHash);
-
-            // URL refund — sandbox chỉ mô phỏng
-            String refundUrl = VNPAYConfig.vnp_ApiUrl + "?" + query;
-            logger.info("Refund request URL: {}", refundUrl);
-
-            // Vì sandbox không thật, bạn có thể mô phỏng phản hồi:
-            return "Refund request created (sandbox). URL: " + refundUrl;
-
-        } catch (Exception e) {
-            logger.error("Error creating refund request: ", e);
-            return "Error: " + e.getMessage();
-        }
-    }
-
-    public boolean refund(Order order) {
-        try {
-            // ✅ Tính tổng tiền cần refund
-            BigDecimal totalAmount = order.getOrderItems().stream()
-                    .map(oi -> oi.getPriceAtOrderTime().multiply(BigDecimal.valueOf(oi.getQuantity())))
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            logger.info("Simulating VNPAY refund for order {}, amount={}",
-                    order.getId(), totalAmount);
-
-            // (Sandbox - giả lập)
-            return true;
-        } catch (Exception e) {
-            logger.error("Refund error: ", e);
-            return false;
-        }
-    }
 
 
 }

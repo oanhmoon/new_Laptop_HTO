@@ -38,6 +38,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
         CASE 
             WHEN m.sender.id = :adminId THEN m.receiver.username
             ELSE m.sender.username
+        END,
+        CASE 
+            WHEN m.sender.id = :adminId THEN m.receiver.fullName
+            ELSE m.sender.fullName
         END
     )
     FROM Message m
@@ -50,10 +54,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
         CASE 
             WHEN m.sender.id = :adminId THEN m.receiver.username
             ELSE m.sender.username
+        END,
+        CASE 
+            WHEN m.sender.id = :adminId THEN m.receiver.fullName
+            ELSE m.sender.fullName
         END
     ORDER BY MAX(m.createdAt) DESC
 """)
     Page<UserMessage> getAllUser(@Param("adminId") Long adminId, Pageable pageable);
+
 
 
 

@@ -10,5 +10,5 @@ import lombok.NoArgsConstructor;
 public class UserMessage {
     private Long id;
     private String userName;
-
+    private String fullName;
 }

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.laptopstore.util.enums.OrderStatus;
+import org.example.laptopstore.util.enums.PaymentMethod;
 import org.example.laptopstore.util.enums.PaymentStatus;
 
 import java.math.BigDecimal;
@@ -24,6 +25,8 @@ public class HistoryOrder {
     private BigDecimal discount;
     private OrderStatus orderStatus;
     private PaymentStatus paymentStatus;
+    private PaymentMethod paymentMethod;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

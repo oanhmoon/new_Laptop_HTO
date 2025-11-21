@@ -118,6 +118,10 @@ public class ProductOption {
     @Column(name = "special_features", columnDefinition = "TEXT")
     private String specialFeatures; // wifi 6, vân tay
 
+    @OneToMany(mappedBy = "productOption", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductOptionImage> images;
+
+
     @PrePersist
     private void prePersist() {
         if (this.isDelete == null) {

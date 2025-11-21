@@ -88,6 +88,8 @@ public class Order {
     private LocalDateTime updatedAt;
 
 
+
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
@@ -98,5 +100,14 @@ public class Order {
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+//    public BigDecimal getTotalAmount() {
+//        if (orderItems == null || orderItems.isEmpty()) return BigDecimal.ZERO;
+//
+//        BigDecimal total = orderItems.stream()
+//                .map(oi -> oi.getPriceAtOrderTime().multiply(BigDecimal.valueOf(oi.getQuantity())))
+//                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//
+//        return total;
+//    }
 
 }

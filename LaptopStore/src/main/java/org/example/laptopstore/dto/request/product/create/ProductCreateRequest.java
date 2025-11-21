@@ -22,8 +22,8 @@ public class ProductCreateRequest {
     @NotNull(message = "Brand ID must not be null")
     private Long brandId;
 
-    @NotNull(message = "Images must not be null")
-    private List<MultipartFile> imageThumbnails;
+//    @NotNull(message = "Images must not be null")
+//    private List<MultipartFile> imageThumbnails;
 
     @NotNull(message = "Product options must not be null")
     @Valid

@@ -30,6 +30,7 @@ public class CartItemServiceImpl implements CartItemService {
     private final UserAccountService userAccountService;
     private final ProductVariantSerivce productVariantSerivce;
     private final ModelMapper modelMapper;
+    private final RetrainService retrainService;
     @Override
     public PageResponse<CartItemResponse> getCartByIdUser(int page, int size, Long idUser) {
         Pageable pageable = PageRequest.of(page, size);
@@ -49,6 +50,9 @@ public class CartItemServiceImpl implements CartItemService {
         }
         cartItem.setQuantity(quantity);
         cartItemRepository.save(cartItem);
+
+        retrainService.notifyRetrain();
+
         QuantityChange quantityChange = new QuantityChange();
         quantityChange.setIdCartItem(cartItem.getId());
         quantityChange.setResult("Quantity changed to " + cartItem.getQuantity());
@@ -61,27 +65,50 @@ public class CartItemServiceImpl implements CartItemService {
     public void removeListCartItem(List<Long> listIdCart) {
         List<CartItem> cartItems = cartItemRepository.findAllById(listIdCart);
         cartItemRepository.deleteAll(cartItems);
+        retrainService.notifyRetrain();
     }
 
     @Override
     public void removeCartItem(Long idCartItem) {
         cartItemRepository.delete(cartItemRepository.findById(idCartItem).orElseThrow());
+        retrainService.notifyRetrain();
     }
 
     @Override
+//    public CartItemResponse insertCartItem(CartItemRequest cartItem) {
+//        CartItem cartItemEntity = new CartItem();
+//        if(cartItemRepository.getCartItemExists(cartItem.getProductVariantId(),cartItem.getUserId()) != null){
+//            CartItem oldCartItem = cartItemRepository.getCartItemExists(cartItem.getProductVariantId(),cartItem.getUserId());
+//            if(Objects.equals(oldCartItem.getProductVariant().getId(), cartItem.getProductVariantId())) {
+//                oldCartItem.setQuantity(oldCartItem.getQuantity() + 1);
+//                return modelMapper.map(cartItemRepository.save(oldCartItem), CartItemResponse.class);
+//            }
+//        }
+//        cartItemEntity.setQuantity(cartItem.getQuantity());
+//        cartItemEntity.setUser(userAccountService.getUserById(cartItem.getUserId()));
+//        cartItemEntity.setProductVariant(productVariantSerivce.getProductVariant(cartItem.getProductVariantId()));
+//        cartItemRepository.save(cartItemEntity);
+//
+//        return modelMapper.map(cartItemEntity, CartItemResponse.class);
+//
+//    }
     public CartItemResponse insertCartItem(CartItemRequest cartItem) {
         CartItem cartItemEntity = new CartItem();
         if(cartItemRepository.getCartItemExists(cartItem.getProductVariantId(),cartItem.getUserId()) != null){
             CartItem oldCartItem = cartItemRepository.getCartItemExists(cartItem.getProductVariantId(),cartItem.getUserId());
             if(Objects.equals(oldCartItem.getProductVariant().getId(), cartItem.getProductVariantId())) {
                 oldCartItem.setQuantity(oldCartItem.getQuantity() + 1);
-                return modelMapper.map(cartItemRepository.save(oldCartItem), CartItemResponse.class);
+                CartItemResponse response = modelMapper.map(cartItemRepository.save(oldCartItem), CartItemResponse.class);
+                retrainService.notifyRetrain();
+                return response;
             }
         }
+
         cartItemEntity.setQuantity(cartItem.getQuantity());
         cartItemEntity.setUser(userAccountService.getUserById(cartItem.getUserId()));
         cartItemEntity.setProductVariant(productVariantSerivce.getProductVariant(cartItem.getProductVariantId()));
         cartItemRepository.save(cartItemEntity);
+        retrainService.notifyRetrain();
         return modelMapper.map(cartItemEntity, CartItemResponse.class);
     }
 

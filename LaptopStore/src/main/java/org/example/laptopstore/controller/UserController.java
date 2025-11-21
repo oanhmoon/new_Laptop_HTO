@@ -1,21 +1,24 @@
 package org.example.laptopstore.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.laptopstore.service.impl.RetrainService;
+
+
 import org.example.laptopstore.dto.response.ApiResponse;
 import org.example.laptopstore.dto.response.PageResponse;
+import org.example.laptopstore.dto.response.message.UserMessage;
 import org.example.laptopstore.dto.response.user.UserAdminResponse;
+import org.example.laptopstore.entity.User;
 import org.example.laptopstore.service.UserAccountService;
 import org.example.laptopstore.service.impl.MessageChatService;
 import org.example.laptopstore.util.Constant;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.example.laptopstore.repository.UserRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -23,6 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
     private final UserAccountService userAccountService;
     private final MessageChatService messageChatService;
+    private final UserRepository userRepository;
+    private final RetrainService retrainService;
     @GetMapping("/admin")
     @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public ApiResponse<Object> adminGetAllUsers(@RequestParam(required = false, defaultValue = "") String keyword,
@@ -62,4 +67,16 @@ public class UserController {
             @RequestParam Long senderId,@RequestParam Long receiverId) {
         return ApiResponse.builder().code(HttpStatus.OK.value()).message(Constant.SUCCESS_MESSAGE).data(messageChatService.getMessageUser(page,size,receiverId,senderId)).build();
     }
+    @GetMapping("/message/user/{id}")
+    public ResponseEntity<UserMessage> getUserById(@PathVariable Long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(new UserMessage(user.getId(), user.getUsername(), user.getFullName()));
+    }
+
+    @PostMapping("/notify-retrain")
+    public void notifyRetrain() {
+        retrainService.notifyRetrain();
+    }
+
+
 }

@@ -3,6 +3,7 @@ package org.example.laptopstore.dto.response.product.admin;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.laptopstore.dto.response.image.ImageThumbnailResponse;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -69,4 +70,6 @@ public class ProductOptionResponse {
     private String ports;
 
     private String specialFeatures;
+
+    private List<ImageThumbnailResponse> images;
 }
