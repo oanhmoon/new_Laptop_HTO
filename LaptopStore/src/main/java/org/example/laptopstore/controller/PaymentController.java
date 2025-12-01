@@ -100,9 +100,32 @@ public class PaymentController {
                 .build();
     }
 
+//    @PostMapping("/check")
+//    public ApiResponse<Object> getPaymentCheck(@RequestBody PaymentCheck paymentCheck) {
+//        return ApiResponse.builder().code(HttpStatus.OK.value()).message(Constant.SUCCESS_MESSAGE).data(paymentService.setPaymentCheck(paymentCheck)).build();
+//    }
     @PostMapping("/check")
-    public ApiResponse<Object> getPaymentCheck(@RequestBody PaymentCheck paymentCheck) {
-        return ApiResponse.builder().code(HttpStatus.OK.value()).message(Constant.SUCCESS_MESSAGE).data(paymentService.setPaymentCheck(paymentCheck)).build();
+    public ApiResponse<Object> getPaymentCheck(@Valid @RequestBody PaymentCheck paymentCheck) {
+        return ApiResponse.builder()
+                .code(HttpStatus.OK.value())
+                .message(Constant.SUCCESS_MESSAGE)
+                .data(paymentService.setPaymentCheck(paymentCheck))
+                .build();
     }
+
+
+    @PostMapping("/retry/{orderId}")
+    public ApiResponse<Object> retryPayment(
+            HttpServletRequest request,
+            @PathVariable Long orderId
+    ) {
+        String url = paymentService.retryPayment(request, orderId);
+        return ApiResponse.builder()
+                .message("SUCCESS")
+                .code(200)
+                .data(url)
+                .build();
+    }
+
 
 } 

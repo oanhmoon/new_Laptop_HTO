@@ -29,5 +29,8 @@ public class HistoryOrder {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String refundReason;
+    private String refundImageUrl;
+    private String refundVideoUrl;
 
 }

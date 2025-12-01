@@ -10,5 +10,6 @@ import java.util.Optional;
 @Repository
 public interface UserViewHistoryRepository extends JpaRepository<UserViewHistory, Long> {
 
-    Optional<UserViewHistory> findByUserIdAndProductId(Long userId, Long productId);
+    Optional<UserViewHistory> findByUserIdAndProductOptionId(Long userId, Long productOptionId);
+
 }

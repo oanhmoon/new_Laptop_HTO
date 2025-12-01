@@ -25,4 +25,7 @@ public class OrderAdminResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<OrderItemResponse> orderItems;
+    private String refundReason;
+    private String refundImageUrl;
+    private String refundVideoUrl;
 }

@@ -1,5 +1,6 @@
 package org.example.laptopstore.service.impl;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.laptopstore.dto.request.payment.PaymentCheck;
 import org.example.laptopstore.dto.request.payment.PaymentRequest;
@@ -9,11 +10,13 @@ import org.example.laptopstore.entity.Payment;
 import org.example.laptopstore.entity.User;
 import org.example.laptopstore.exception.AppException;
 import org.example.laptopstore.exception.ErrorCode;
+import org.example.laptopstore.payment.VNPAYService;
 import org.example.laptopstore.repository.PaymentRepository;
 import org.example.laptopstore.repository.UserRepository;
 import org.example.laptopstore.service.OrderSerivce;
 import org.example.laptopstore.service.PaymentService;
 import org.example.laptopstore.service.UserAccountService;
+import org.example.laptopstore.util.enums.PaymentMethod;
 import org.example.laptopstore.util.enums.PaymentStatus;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
     private final OrderSerivce orderSerivce;
+    private final VNPAYService vnpayService;
 
     @Transactional
     @Override
@@ -102,25 +106,48 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    @Transactional
+//    public PaymentCheck setPaymentCheck(PaymentCheck paymentCheck) {
+//        Order order = orderSerivce.findById(paymentCheck.getOrderId());
+//
+//        // Gán order và user vào payment
+//        Payment payment = new Payment();
+//        payment.setOrder(order);
+//        payment.setUser(userAccountService.getUserById(paymentCheck.getUserId()));
+//        payment.setAmount(paymentCheck.getAmount());
+//        payment.setPaymentDate(LocalDateTime.now());
+//
+//        // Xử lý trạng thái đơn hàng
+//        if (paymentCheck.getType() == 0) {
+//            order.setPaymentStatus(PaymentStatus.PAID);
+//        } else {
+//            order.setPaymentStatus(PaymentStatus.UNPAID);
+//        }
+//
+//        orderSerivce.saved(order);
+//        return modelMapper.map(paymentRepository.save(payment), PaymentCheck.class);
+//    }
+
     public PaymentCheck setPaymentCheck(PaymentCheck paymentCheck) {
+
         Order order = orderSerivce.findById(paymentCheck.getOrderId());
+        User user = userAccountService.getUserById(paymentCheck.getUserId());
 
-        // Gán order và user vào payment
-        Payment payment = new Payment();
-        payment.setOrder(order);
-        payment.setUser(userAccountService.getUserById(paymentCheck.getUserId()));
-        payment.setAmount(paymentCheck.getAmount());
-        payment.setPaymentDate(LocalDateTime.now());
-
-        // Xử lý trạng thái đơn hàng
-        if (paymentCheck.getType() == 0) {
+        if (paymentCheck.getType() == 0) { // thanh toán thành công
             order.setPaymentStatus(PaymentStatus.PAID);
+
+            Payment payment = new Payment();
+            payment.setOrder(order);
+            payment.setUser(user);
+            payment.setAmount(paymentCheck.getAmount());
+            payment.setPaymentDate(LocalDateTime.now());
+            paymentRepository.save(payment);
         } else {
             order.setPaymentStatus(PaymentStatus.UNPAID);
         }
 
         orderSerivce.saved(order);
-        return modelMapper.map(paymentRepository.save(payment), PaymentCheck.class);
+        return paymentCheck;
     }
 
 //    @Override
@@ -147,6 +174,27 @@ public class PaymentServiceImpl implements PaymentService {
 //
 //        return modelMapper.map(payment, PaymentCheck.class);
 //    }
+@Override
+public String retryPayment(HttpServletRequest request, Long orderId) {
+
+    Order order = orderSerivce.findById(orderId);
+
+    if (order.getPaymentMethod() != PaymentMethod.VNPAY) {
+        throw new AppException(ErrorCode.PAYMENT_METHOD_NOT_SUPPORT);
+    }
+
+    if (order.getPaymentStatus() == PaymentStatus.PAID) {
+        throw new AppException(ErrorCode.ORDER_ALREADY_PAID);
+    }
+
+    long amount = order.getTotalAmount().longValue();
+
+    return vnpayService.createOrder(
+            request,
+            amount,
+            "Thanh toán lại cho đơn hàng " + orderId
+    );
+}
 
 
 }

@@ -15,6 +15,7 @@ import org.example.laptopstore.util.enums.PaymentMethod;
 import org.example.laptopstore.util.enums.PaymentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -41,5 +42,7 @@ public interface OrderSerivce {
     OrderResponse rejectRefund(Long orderId);
     OrderResponse acceptReturn(Long orderId);
     OrderResponse verifyReturn(Long orderId);
+    OrderResponse refund(Long orderId, String reason, MultipartFile image, MultipartFile video);
+
 
 }

@@ -1,6 +1,7 @@
 package org.example.laptopstore.service;
 
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.example.laptopstore.dto.request.payment.PaymentCheck;
 import org.example.laptopstore.dto.request.payment.PaymentRequest;
 import org.example.laptopstore.dto.response.payment.PaymentResponse;
@@ -16,4 +17,6 @@ public interface PaymentService {
     List<PaymentResponse> getPaymentsByUserId(Long userId);
     void deletePayment(Long id);
     PaymentCheck setPaymentCheck(PaymentCheck paymentCheck);
+    String retryPayment(HttpServletRequest request, Long orderId);
+
 }

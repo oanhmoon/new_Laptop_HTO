@@ -6,6 +6,8 @@ import org.example.laptopstore.dto.request.productreview.ProductReviewRequest;
 import org.example.laptopstore.dto.response.ApiResponse;
 import org.example.laptopstore.dto.response.PageResponse;
 import org.example.laptopstore.dto.response.productreview.ProductReviewResponse;
+import org.example.laptopstore.exception.BadRequestException;
+import org.example.laptopstore.service.ImageService;
 import org.example.laptopstore.service.ProductReviewService;
 import org.example.laptopstore.util.Constant;
 import org.springframework.data.domain.Page;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.text.ParseException;
 
@@ -28,6 +31,7 @@ import java.text.ParseException;
 public class ProductReviewController {
 
     private final ProductReviewService productReviewService;
+    private final ImageService imageService;
 
     @GetMapping("/{productOptionId}")
     public ApiResponse<Object> getAllProductReviewsByProductId(
@@ -51,4 +55,29 @@ public class ProductReviewController {
         productReviewService.deleteProductReview(productReviewId);
         return ApiResponse.builder().code(HttpStatus.OK.value()).message(Constant.SUCCESS_MESSAGE).build();
     }
+
+    @PostMapping("/upload-media")
+    public ApiResponse<Object> uploadMedia(@RequestParam("file") MultipartFile file) {
+
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException("File is empty");
+        }
+
+        String url = null;
+
+        if (file.getContentType().startsWith("image/")) {
+            url = imageService.uploadImage(file);
+        } else if (file.getContentType().startsWith("video/")) {
+            url = imageService.uploadVideo(file);
+        } else {
+            throw new BadRequestException("Invalid file type");
+        }
+
+        return ApiResponse.builder()
+                .code(200)
+                .message("SUCCESS")
+                .data(url)
+                .build();
+    }
+
 }

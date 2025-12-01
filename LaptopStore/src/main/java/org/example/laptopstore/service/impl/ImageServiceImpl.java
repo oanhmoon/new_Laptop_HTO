@@ -27,6 +27,21 @@ public class ImageServiceImpl implements ImageService {
             throw new BadRequestException("Failed to upload image");
         }
     }
+    @Override
+    public String uploadVideo(MultipartFile file) {
+        try {
+            Map uploadResult = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap(
+                            "folder", "uploads",
+                            "resource_type", "video"
+                    )
+            );
+            return uploadResult.get("url").toString();
+        } catch (IOException e) {
+            throw new BadRequestException("Failed to upload video");
+        }
+    }
 
     @Override
     public boolean deleteImage(String imageUrl) {

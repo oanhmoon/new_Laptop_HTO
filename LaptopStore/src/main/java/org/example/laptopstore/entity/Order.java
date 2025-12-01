@@ -1,20 +1,6 @@
 package org.example.laptopstore.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -88,6 +74,14 @@ public class Order {
     private LocalDateTime updatedAt;
 
 
+    @Column(columnDefinition = "TEXT")
+    private String refundReason;
+
+    @Column(columnDefinition = "TEXT")
+    private String refundImageUrl;   // chỉ 1 ảnh
+
+    @Column(columnDefinition = "TEXT")
+    private String refundVideoUrl;   // chỉ 1 video
 
 
     @PrePersist
@@ -109,5 +103,15 @@ public class Order {
 //
 //        return total;
 //    }
+@Transient
+public BigDecimal getTotalAmount() {
+    if (this.orderItems == null) return BigDecimal.ZERO;
+
+    return this.orderItems.stream()
+            .map(item -> item.getPriceAtOrderTime()
+                    .multiply(BigDecimal.valueOf(item.getQuantity())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            .subtract(this.discount != null ? this.discount : BigDecimal.ZERO);
+}
 
 }

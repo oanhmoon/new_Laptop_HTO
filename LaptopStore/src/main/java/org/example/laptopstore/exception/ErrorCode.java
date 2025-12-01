@@ -55,6 +55,11 @@ public enum ErrorCode {
 
     INVALID_PASSWORD_FORMAT(BAD_REQUEST, "Mật khẩu phải ít nhất 8 ký tự, bao gồm chữ, số và ký tự đặc biệt",
             HttpStatus.BAD_REQUEST, "Định dạng mật khẩu không hợp lệ"),
+    PAYMENT_METHOD_NOT_SUPPORT(BAD_REQUEST, "Phương thức thanh toán không hỗ trợ",
+            HttpStatus.BAD_REQUEST, "Phương thức thanh toán không hỗ trợ"),
+
+    ORDER_ALREADY_PAID(BAD_REQUEST, "Đơn hàng đã được thanh toán",
+            HttpStatus.BAD_REQUEST, "Đơn hàng đã được thanh toán"),
 
     INVALID_EMAIL_FORMAT(BAD_REQUEST, "Email không hợp lệ", HttpStatus.BAD_REQUEST,
             "Định dạng email không đúng, vui lòng kiểm tra lại");

@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.example.laptopstore.dto.response.user.UserResponse;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -23,5 +24,8 @@ public class ProductReviewResponse {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    private List<String> images;
+    private List<String> videos;
 
 }

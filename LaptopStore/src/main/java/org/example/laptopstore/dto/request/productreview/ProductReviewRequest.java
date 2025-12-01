@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class ProductReviewRequest {
 
@@ -18,4 +20,7 @@ public class ProductReviewRequest {
 
     @NotNull(message = "Comment is required")
     private String comment;
+
+    private List<String> imageUrls;  // URL ảnh từ Cloudinary
+    private List<String> videoUrls;
 }

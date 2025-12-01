@@ -21,8 +21,8 @@ public class UserViewHistory {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    @JoinColumn(name = "product_option_id", nullable = false)
+    private ProductOption productOption;
 
     @Column(name = "view_count")
     private Integer viewCount = 1;

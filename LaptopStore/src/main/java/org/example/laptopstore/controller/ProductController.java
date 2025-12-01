@@ -38,17 +38,18 @@ public class ProductController {
     private final ProductService productService;
     private final UserViewHistoryService userViewHistoryService;
 
-    @PostMapping("/{productId}/view")
+    @PostMapping("/{optionId}/view")
     public ApiResponse<Object> recordProductView(
-            @PathVariable("productId") Long productId,
+            @PathVariable("optionId") Long optionId,
             @RequestParam("userId") Long userId
     ) {
-        userViewHistoryService.recordView(userId, productId);
+        userViewHistoryService.recordView(userId, optionId);
         return ApiResponse.builder()
                 .code(HttpStatus.OK.value())
                 .message("Lưu lịch sử xem thành công")
                 .build();
     }
+
 
 
     @GetMapping("/page")

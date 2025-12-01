@@ -10,4 +10,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class OrderResponse {
     private Long orderId;
+    private String refundReason;
+    private String refundImageUrl;
+    private String refundVideoUrl;
+    public OrderResponse(Long orderId) {
+        this.orderId = orderId;
+    }
 }

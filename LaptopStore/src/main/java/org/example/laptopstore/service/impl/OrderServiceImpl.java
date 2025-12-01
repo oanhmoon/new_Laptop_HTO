@@ -25,13 +25,7 @@ import org.example.laptopstore.repository.DiscountRepository;
 import org.example.laptopstore.repository.OrderItemsRepository;
 import org.example.laptopstore.repository.OrderRepository;
 import org.example.laptopstore.repository.UserRepository;
-import org.example.laptopstore.service.CartItemService;
-import org.example.laptopstore.service.DiscountService;
-import org.example.laptopstore.service.InfoUserReceiveService;
-import org.example.laptopstore.service.OrderSerivce;
-import org.example.laptopstore.service.ProductVariantSerivce;
-import org.example.laptopstore.service.UserAccountService;
-import org.example.laptopstore.service.WardService;
+import org.example.laptopstore.service.*;
 import org.example.laptopstore.util.enums.DiscountType;
 import org.example.laptopstore.util.enums.OrderStatus;
 import org.example.laptopstore.util.enums.PaymentMethod;
@@ -41,6 +35,7 @@ import org.springframework.data.domain.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -67,6 +62,7 @@ public class OrderServiceImpl implements OrderSerivce {
     private final OrderMapper orderMapper;
     private final DiscountRepository discountRepository;
     private final UserRepository userRepository;
+    private final ImageService imageService;
     private final VNPAYService vnpayService;
 
     @Override
@@ -297,6 +293,10 @@ public class OrderServiceImpl implements OrderSerivce {
 
             historyOrder.setCreatedAt(order.getCreatedAt());
             historyOrder.setUpdatedAt(order.getUpdatedAt());
+            historyOrder.setRefundReason(order.getRefundReason());
+            historyOrder.setRefundImageUrl(order.getRefundImageUrl());
+            historyOrder.setRefundVideoUrl(order.getRefundVideoUrl());
+
 
             listHistoryOrders.add(historyOrder);
         }
@@ -625,5 +625,56 @@ public class OrderServiceImpl implements OrderSerivce {
         Order savedOrder = orderRepository.save(order);
         return new OrderResponse(savedOrder.getId());
     }
+
+
+    @Override
+    @Transactional
+    public OrderResponse refund(Long orderId, String reason, MultipartFile image, MultipartFile video) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+
+        // ===== VALIDATION =====
+        if (image == null || video == null) {
+            throw new BadRequestException("Both image and video are required");
+        }
+
+        if (image.getContentType() == null || !image.getContentType().startsWith("image/")) {
+            throw new BadRequestException("Image file is invalid");
+        }
+
+        if (video.getContentType() == null || !video.getContentType().startsWith("video/")) {
+            throw new BadRequestException("Video file is invalid");
+        }
+
+        // ===== UPLOAD CLOUDINARY =====
+        // Ảnh dùng uploadImage()
+        String imageUrl = imageService.uploadImage(image);
+
+        // Video dùng uploadVideo()
+        String videoUrl = imageService.uploadVideo(video);
+
+        // ===== LƯU VÀO ORDER =====
+        order.setRefundReason(reason);
+        order.setRefundImageUrl(imageUrl);
+        order.setRefundVideoUrl(videoUrl);
+
+        // ===== CẬP NHẬT TRẠNG THÁI =====
+        order.setPaymentStatus(PaymentStatus.REFUNDED);
+        order.setStatus(OrderStatus.PENDING_RETURNED);
+
+        orderRepository.save(order);
+
+        // ===== TRẢ VỀ RESPONSE =====
+        return new OrderResponse(
+                order.getId(),
+                order.getRefundReason(),
+                order.getRefundImageUrl(),
+                order.getRefundVideoUrl()
+        );
+
+    }
+
+
 
 }
