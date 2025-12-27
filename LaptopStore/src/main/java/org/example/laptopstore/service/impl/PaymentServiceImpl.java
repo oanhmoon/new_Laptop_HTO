@@ -107,27 +107,6 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
-//    public PaymentCheck setPaymentCheck(PaymentCheck paymentCheck) {
-//        Order order = orderSerivce.findById(paymentCheck.getOrderId());
-//
-//        // Gán order và user vào payment
-//        Payment payment = new Payment();
-//        payment.setOrder(order);
-//        payment.setUser(userAccountService.getUserById(paymentCheck.getUserId()));
-//        payment.setAmount(paymentCheck.getAmount());
-//        payment.setPaymentDate(LocalDateTime.now());
-//
-//        // Xử lý trạng thái đơn hàng
-//        if (paymentCheck.getType() == 0) {
-//            order.setPaymentStatus(PaymentStatus.PAID);
-//        } else {
-//            order.setPaymentStatus(PaymentStatus.UNPAID);
-//        }
-//
-//        orderSerivce.saved(order);
-//        return modelMapper.map(paymentRepository.save(payment), PaymentCheck.class);
-//    }
-
     public PaymentCheck setPaymentCheck(PaymentCheck paymentCheck) {
 
         Order order = orderSerivce.findById(paymentCheck.getOrderId());
@@ -150,30 +129,7 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentCheck;
     }
 
-//    @Override
-//    public PaymentCheck setPaymentCheck(PaymentCheck paymentCheck) {
-//        Order order = orderSerivce.findById(paymentCheck.getOrderId());
-//        order.setPaymentStatus(paymentCheck.getType() == 0 ? PaymentStatus.PAID : PaymentStatus.UNPAID);
-//
-//        // ✅ Lưu mã giao dịch VNPAY từ frontend gửi lên
-//        if (paymentCheck.getVnpTransactionNo() != null) {
-//            order.setVnpTransactionNo(paymentCheck.getVnpTransactionNo());
-//        }
-//        if (paymentCheck.getVnpTxnRef() != null) {
-//            order.setVnpTxnRef(paymentCheck.getVnpTxnRef());
-//        }
-//
-//        orderSerivce.saved(order);
-//
-//        Payment payment = new Payment();
-//        payment.setOrder(order);
-//        payment.setUser(userAccountService.getUserById(paymentCheck.getUserId()));
-//        payment.setAmount(paymentCheck.getAmount());
-//        payment.setPaymentDate(LocalDateTime.now());
-//        paymentRepository.save(payment);
-//
-//        return modelMapper.map(payment, PaymentCheck.class);
-//    }
+
 @Override
 public String retryPayment(HttpServletRequest request, Long orderId) {
 
@@ -192,7 +148,8 @@ public String retryPayment(HttpServletRequest request, Long orderId) {
     return vnpayService.createOrder(
             request,
             amount,
-            "Thanh toán lại cho đơn hàng " + orderId
+            orderId.toString()
+            //"Thanh toán lại cho đơn hàng " + orderId
     );
 }
 

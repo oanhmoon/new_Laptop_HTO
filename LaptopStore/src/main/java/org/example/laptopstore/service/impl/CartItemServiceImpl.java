@@ -74,43 +74,51 @@ public class CartItemServiceImpl implements CartItemService {
         retrainService.notifyRetrain();
     }
 
+
     @Override
-//    public CartItemResponse insertCartItem(CartItemRequest cartItem) {
-//        CartItem cartItemEntity = new CartItem();
-//        if(cartItemRepository.getCartItemExists(cartItem.getProductVariantId(),cartItem.getUserId()) != null){
-//            CartItem oldCartItem = cartItemRepository.getCartItemExists(cartItem.getProductVariantId(),cartItem.getUserId());
-//            if(Objects.equals(oldCartItem.getProductVariant().getId(), cartItem.getProductVariantId())) {
-//                oldCartItem.setQuantity(oldCartItem.getQuantity() + 1);
-//                return modelMapper.map(cartItemRepository.save(oldCartItem), CartItemResponse.class);
-//            }
-//        }
-//        cartItemEntity.setQuantity(cartItem.getQuantity());
-//        cartItemEntity.setUser(userAccountService.getUserById(cartItem.getUserId()));
-//        cartItemEntity.setProductVariant(productVariantSerivce.getProductVariant(cartItem.getProductVariantId()));
-//        cartItemRepository.save(cartItemEntity);
-//
-//        return modelMapper.map(cartItemEntity, CartItemResponse.class);
-//
-//    }
+    @Transactional
     public CartItemResponse insertCartItem(CartItemRequest cartItem) {
-        CartItem cartItemEntity = new CartItem();
-        if(cartItemRepository.getCartItemExists(cartItem.getProductVariantId(),cartItem.getUserId()) != null){
-            CartItem oldCartItem = cartItemRepository.getCartItemExists(cartItem.getProductVariantId(),cartItem.getUserId());
-            if(Objects.equals(oldCartItem.getProductVariant().getId(), cartItem.getProductVariantId())) {
-                oldCartItem.setQuantity(oldCartItem.getQuantity() + 1);
-                CartItemResponse response = modelMapper.map(cartItemRepository.save(oldCartItem), CartItemResponse.class);
-                retrainService.notifyRetrain();
-                return response;
-            }
+
+        var productVariant = productVariantSerivce.getProductVariant(cartItem.getProductVariantId());
+
+        // 1. Nếu hết hàng → không cho thêm
+        if (productVariant.getStock() == null || productVariant.getStock() <= 0) {
+            throw new AppException(ErrorCode.NOT_ENOUGH_QUANTITY);
         }
 
-        cartItemEntity.setQuantity(cartItem.getQuantity());
-        cartItemEntity.setUser(userAccountService.getUserById(cartItem.getUserId()));
-        cartItemEntity.setProductVariant(productVariantSerivce.getProductVariant(cartItem.getProductVariantId()));
-        cartItemRepository.save(cartItemEntity);
+        // 2. Kiểm tra có tồn tại trong giỏ chưa
+        CartItem existing = cartItemRepository.getCartItemExists(
+                cartItem.getProductVariantId(),
+                cartItem.getUserId()
+        );
+
+        if (existing != null) {
+            // Nếu đã đạt tối đa stock thì dừng lại
+            if (existing.getQuantity() >= productVariant.getStock()) {
+                throw new AppException(ErrorCode.NOT_ENOUGH_QUANTITY);
+            }
+
+            existing.setQuantity(existing.getQuantity() + 1);
+            CartItem saved = cartItemRepository.save(existing);
+            return modelMapper.map(saved, CartItemResponse.class);
+        }
+
+        // 3. Thêm mới cartItem
+        // Nếu quantity yêu cầu > stock → lỗi
+        if (cartItem.getQuantity() > productVariant.getStock()) {
+            throw new AppException(ErrorCode.NOT_ENOUGH_QUANTITY);
+        }
+
+        CartItem newCartItem = new CartItem();
+        newCartItem.setQuantity(cartItem.getQuantity());
+        newCartItem.setUser(userAccountService.getUserById(cartItem.getUserId()));
+        newCartItem.setProductVariant(productVariant);
+
+        cartItemRepository.save(newCartItem);
         retrainService.notifyRetrain();
-        return modelMapper.map(cartItemEntity, CartItemResponse.class);
+        return modelMapper.map(newCartItem, CartItemResponse.class);
     }
+
 
     @Override
     public Integer getTotalQuantity(Long userId) {

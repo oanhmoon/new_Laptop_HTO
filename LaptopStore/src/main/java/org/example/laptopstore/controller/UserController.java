@@ -73,10 +73,6 @@ public class UserController {
         return ResponseEntity.ok(new UserMessage(user.getId(), user.getUsername(), user.getFullName()));
     }
 
-    @PostMapping("/notify-retrain")
-    public void notifyRetrain() {
-        retrainService.notifyRetrain();
-    }
 
 
 }

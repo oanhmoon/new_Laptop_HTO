@@ -1,0 +1,14 @@
+Laptop gaming: thường nặng, tản nhiệt tốt, CPU H-series, GPU RTX, phù hợp chơi game & đồ họa.
+
+Laptop văn phòng: nhẹ, pin trâu, CPU U-series, không cần GPU mạnh.
+
+Laptop cho sinh viên IT: ưu tiên CPU mạnh (i5/i7), RAM 16GB, SSD 512GB, không cần GPU mạnh.
+
+Laptop cho đồ họa: cần RTX 3050/4060 trở lên, màn IPS 100% sRGB.
+
+Macbook phù hợp lập trình mobile, UI/UX, văn phòng, nhưng không phù hợp gaming.
+
+Asus TUF: gaming giá tốt, tản ok.
+MSI Gaming: mạnh nhưng nóng.
+Dell XPS: cao cấp, mỏng nhẹ.
+ThinkPad: bền, gõ tốt.

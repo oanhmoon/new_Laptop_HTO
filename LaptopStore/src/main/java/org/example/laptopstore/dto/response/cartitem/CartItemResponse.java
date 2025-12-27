@@ -21,6 +21,8 @@ public class CartItemResponse {
     private BigDecimal basePrice;
     private String imageUrl;
     private Integer quantity;
+    private Integer availableStock;  // số lượng tồn kho hiện tại của variant
+
 
     public CartItemResponse(Long id,
                             Long variantId,
@@ -34,7 +36,8 @@ public class CartItemResponse {
                             BigDecimal basePrice,
                             BigDecimal priceDiff,
                             String imageUrl,
-                            Integer quantity) {
+                            Integer quantity,
+                            Integer availableStock) {
         this.id = id;
         this.variantId = variantId;
         this.productName = productName;
@@ -47,6 +50,7 @@ public class CartItemResponse {
         this.basePrice = basePrice.add(priceDiff);
         this.imageUrl = imageUrl;
         this.quantity = quantity;
+        this.availableStock = availableStock;
     }
 
 }

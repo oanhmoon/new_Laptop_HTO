@@ -23,7 +23,8 @@ public interface CartItemRepository extends JpaRepository<CartItem, Long> {
         c.productVariant.option.price,
         c.productVariant.priceDiff,
         c.productVariant.imageUrl,
-        c.quantity
+        c.quantity,
+        c.productVariant.stock
     )
     FROM CartItem c
     WHERE c.user.id = :id

@@ -353,57 +353,86 @@ public class EmailService {
             """;
 
         static final String ORDER_SUCCESS_TEMPLATE = """
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Đặt hàng thành công</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f6f6f6; padding: 20px; }
-        .container { background: #fff; max-width: 600px; margin: auto; padding: 25px; border-radius: 8px; }
-        h2 { color: #2c3e50; }
-        .footer { margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; color: #777; font-size: 14px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th { background: #f5f5f5; padding: 12px; text-align: left; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Cảm ơn bạn đã đặt hàng!</h2>
-        <p>Xin chào <strong>${customerName}</strong>,</p>
-        <p>Đơn hàng của bạn đã được tạo thành công với mã <strong>#${orderId}</strong>.</p>
-
-        <h3>Chi tiết đơn hàng:</h3>
-
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 40%;">Sản phẩm</th>
-                    <th style="width: 20%;">Đơn giá</th>
-                    <th style="width: 15%;">SL</th>
-                    <th style="width: 25%;">Thành tiền</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${productRows}
-            </tbody>
-        </table>
-
-        <p><strong>Tổng thanh toán: ${totalAmount}</strong></p>
-
-        <p>Chi tiết đơn hàng của bạn:</p>
-//        <a href="${orderLink}" style="padding:10px 18px;background:#4CAF50;color:white;text-decoration:none;border-radius:4px;">
-//            Xem đơn hàng
-//        </a>
-
-        <div class="footer">
-            <p>Cảm ơn bạn đã mua hàng tại cửa hàng chúng tôi.</p>
-            <p>Trân trọng,<br><strong>Đội ngũ bán hàng</strong></p>
-        </div>
-    </div>
-</body>
-</html>
-""";
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Đặt hàng thành công</title>
+                <style>
+                    body { font-family: Arial, sans-serif; background: #f6f6f6; padding: 20px; }
+                    .container { background: #fff; max-width: 600px; margin: auto; padding: 25px; border-radius: 8px; }
+                    h2 { color: #2c3e50; }
+                    .footer { margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; color: #777; font-size: 14px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                    th { background: #f5f5f5; padding: 12px; text-align: left; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h2>Cảm ơn bạn đã đặt hàng!</h2>
+                    <p>Xin chào <strong>${customerName}</strong>,</p>
+                    <p>Đơn hàng của bạn đã được tạo thành công với mã <strong>#${orderId}</strong>.</p>
+            
+                    <h3>Chi tiết đơn hàng:</h3>
+            
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">Sản phẩm</th>
+                                <th style="width: 20%;">Đơn giá</th>
+                                <th style="width: 15%;">SL</th>
+                                <th style="width: 25%;">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${productRows}
+                        </tbody>
+                    </table>
+            
+                    <p><strong>Tổng thanh toán: ${totalAmount}</strong></p>
+            
+                    
+            
+                    <div class="footer">
+                        <p>Cảm ơn bạn đã mua hàng tại cửa hàng chúng tôi.</p>
+                        <p>Trân trọng,<br><strong>Đội ngũ bán hàng</strong></p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """;
 
     }
+
+    public void sendPaymentFailedEmail(
+            String recipientEmail,
+            String customerName,
+            String orderId,
+            List<OrderItem> items
+    ) {
+        try {
+            String subject = "Thanh toán chưa hoàn tất cho đơn hàng #" + orderId;
+
+            String content = """
+        <html>
+        <body>
+            <p>Xin chào <strong>%s</strong>,</p>
+            <p>Bạn đã đặt đơn hàng <strong>#%s</strong> nhưng thanh toán chưa hoàn tất.</p>
+            <p>Vui lòng quay lại đơn hàng trong Lịch sử đơn hàng để tiếp tục thanh toán:</p>
+            
+            
+            
+            <p>Nếu bạn cần hỗ trợ, vui lòng liên hệ chúng tôi.</p>
+        </body>
+        </html>
+        """.formatted(customerName, orderId, orderId);
+
+            MimeMessage message = createEmailMessage(recipientEmail, subject, content);
+            mailSender.send(message);
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to send payment failed email", e);
+        }
+    }
+
 }

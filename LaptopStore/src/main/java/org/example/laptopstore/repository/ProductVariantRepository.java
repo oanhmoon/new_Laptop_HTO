@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 
 @Repository
 public interface ProductVariantRepository extends JpaRepository<ProductVariant, Long> {
@@ -51,4 +53,7 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
         WHERE po.id = :productOptionId
     """, nativeQuery = true)
     void updateDeleteProductVariantByProductOptionId(Long productOptionId);
+
+    List<ProductVariant> findByOption_Id(Long optionId);
+
 }

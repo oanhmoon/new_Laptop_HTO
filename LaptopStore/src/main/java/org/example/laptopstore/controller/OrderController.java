@@ -1,12 +1,17 @@
 package org.example.laptopstore.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.laptopstore.dto.request.order.OrderRequest;
 import org.example.laptopstore.dto.request.order.OrderStatusRequest;
 import org.example.laptopstore.dto.response.ApiResponse;
 import org.example.laptopstore.dto.response.PageResponse;
 import org.example.laptopstore.dto.response.order.OrderResponse;
+import org.example.laptopstore.entity.Order;
+import org.example.laptopstore.payment.VNPAYConfig;
+import org.example.laptopstore.repository.OrderRepository;
 import org.example.laptopstore.service.OrderSerivce;
+import org.example.laptopstore.service.impl.EmailService;
 import org.example.laptopstore.util.Constant;
 import org.example.laptopstore.util.enums.OrderStatus;
 import org.example.laptopstore.util.enums.PaymentMethod;
@@ -16,10 +21,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.example.laptopstore.util.Constant.PASSWORD_CHANGE_SUCESSFUL;
 import static org.example.laptopstore.util.Constant.SUCCESS;
@@ -30,6 +39,9 @@ import static org.example.laptopstore.util.Constant.SUCCESS_MESSAGE;
 @RequestMapping("/api/v1/order")
 public class OrderController {
     private final OrderSerivce orderSerivce;
+
+    private final OrderRepository orderRepository;
+    private final EmailService emailService;
     @PostMapping
     public ApiResponse<Object> insertOrder(@RequestBody OrderRequest orderRequest) {
         OrderResponse response = orderSerivce.insertOrder(orderRequest);
@@ -151,5 +163,4 @@ public class OrderController {
                 .data(orderSerivce.verifyReturn(orderId))
                 .build();
     }
-
 }

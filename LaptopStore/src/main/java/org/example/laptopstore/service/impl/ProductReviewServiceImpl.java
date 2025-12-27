@@ -45,69 +45,6 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     @Override
     @Transactional
 
-//    public ProductReviewResponse createProductReview(ProductReviewRequest productReviewRequest) throws ParseException {
-//        // 🔹 Lấy user từ token JWT
-//        String token = tokenService.getJWT();
-//        String username = tokenService.getClaim(token, SUB);
-//        User user = userRepository.findByUsername(username);
-//        if (user == null) {
-//            throw new NotFoundException(USER_NOT_VALID);
-//        }
-//
-//        // 🔹 Lấy product option
-//        ProductOption productOption = productOptionRepository.findByIdAndIsDeleteFalse(productReviewRequest.getProductOptionId())
-//                .orElseThrow(() -> new NotFoundException("Product not found"));
-//
-//        // 🔹 Kiểm tra user đã mua sản phẩm này chưa
-//
-//        boolean hasBought = orderRepository.hasUserBoughtProduct(user, productOption);
-//        if (!hasBought) {
-//            throw new BadRequestException("Bạn chưa mua sản phẩm này nên không thể đánh giá.");
-//        }
-//
-//
-//        // 🔹 (Tuỳ chọn) Kiểm tra đã đánh giá sản phẩm này chưa
-////        boolean exists = productReviewRepository.existsByUserAndProductOption(user, productOption);
-////        if (exists) {
-////            throw new BadRequestException("Bạn đã đánh giá sản phẩm này rồi.");
-////        }
-//
-//        // 🔹 Map và lưu vào DB
-//        ProductReview productReview = productReviewMapper.mapRequestToEntity(productReviewRequest);
-//        productReview.setProductOption(productOption);
-//        productReview.setUser(user);
-//
-////        ProductReview saved = productReviewRepository.save(productReview);
-////        return productReviewMapper.toProductReviewResponse(saved);
-//
-//        ProductReview savedReview = productReviewRepository.save(productReview);
-//
-//// Lưu ảnh
-//        if (productReviewRequest.getImageUrls() != null) {
-//            for (String url : productReviewRequest.getImageUrls()) {
-//                ProductReviewMedia media = new ProductReviewMedia();
-//                media.setProductReview(savedReview);
-//                media.setUrl(url);
-//                media.setType("IMAGE");
-//                productReviewMediaRepository.save(media);
-//            }
-//        }
-//
-//// Lưu video
-//        if (productReviewRequest.getVideoUrls() != null) {
-//            for (String url : productReviewRequest.getVideoUrls()) {
-//                ProductReviewMedia media = new ProductReviewMedia();
-//                media.setProductReview(savedReview);
-//                media.setUrl(url);
-//                media.setType("VIDEO");
-//                productReviewMediaRepository.save(media);
-//            }
-//        }
-//
-//        return productReviewMapper.toProductReviewResponse(savedReview);
-//
-//    }
-
     public ProductReviewResponse createProductReview(ProductReviewRequest productReviewRequest) throws ParseException {
         // 🔹 Lấy user từ token JWT
         String token = tokenService.getJWT();
@@ -117,26 +54,26 @@ public class ProductReviewServiceImpl implements ProductReviewService {
             throw new NotFoundException(USER_NOT_VALID);
         }
 
-        // 🔹 Lấy product option
+        //  Lấy product option
         ProductOption productOption = productOptionRepository.findByIdAndIsDeleteFalse(productReviewRequest.getProductOptionId())
                 .orElseThrow(() -> new NotFoundException("Product not found"));
 
-        // 🔹 Kiểm tra user đã mua sản phẩm này chưa
+        //  Kiểm tra user đã mua sản phẩm này chưa
         boolean hasBought = orderRepository.hasUserBoughtProduct(user, productOption);
         if (!hasBought) {
             throw new BadRequestException("Bạn chưa mua sản phẩm này nên không thể đánh giá.");
         }
 
-        // 🔹 Map và lưu vào DB: ProductReview
+        //  Map và lưu vào DB: ProductReview
         ProductReview productReview = productReviewMapper.mapRequestToEntity(productReviewRequest);
         productReview.setProductOption(productOption);
         productReview.setUser(user);
 
-        // 🔹 Lưu review trước để lấy ID
+        //  Lưu review trước để lấy ID
         ProductReview savedReview = productReviewRepository.save(productReview);
 
 
-        // 🔹 Lưu ảnh
+        //  Lưu ảnh
         if (productReviewRequest.getImageUrls() != null) {
             for (String url : productReviewRequest.getImageUrls()) {
                 ProductReviewMedia media = new ProductReviewMedia();
@@ -148,7 +85,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
             }
         }
 
-        // 🔹 Lưu video
+        //  Lưu video
         if (productReviewRequest.getVideoUrls() != null) {
             for (String url : productReviewRequest.getVideoUrls()) {
                 ProductReviewMedia media = new ProductReviewMedia();
@@ -159,8 +96,6 @@ public class ProductReviewServiceImpl implements ProductReviewService {
                 savedReview.getMedias().add(media);
             }
         }
-
-
 
         return productReviewMapper.toProductReviewResponse(savedReview);
     }
@@ -173,6 +108,5 @@ public class ProductReviewServiceImpl implements ProductReviewService {
                 .orElseThrow(() -> new NotFoundException("Product review not found"));
         productReviewRepository.delete(productReview);
     }
-
 
 }

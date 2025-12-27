@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/LaptopStore.iml" filepath="$PROJECT_DIR$/.idea/LaptopStore.iml" />
+      <module fileurl="file://$PROJECT_DIR$/LaptopStore/LaptopStore.iml" filepath="$PROJECT_DIR$/LaptopStore/LaptopStore.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/new_Laptop_HTO.iml" filepath="$PROJECT_DIR$/.idea/new_Laptop_HTO.iml" />
     </modules>
   </component>
 </project>
