@@ -64,17 +64,46 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "ORDER BY YEAR(oi.order.createdAt) ASC")
     List<RevenueYear> getRevenueByYear();
 
-    @Query("SELECT new org.example.laptopstore.dto.response.order.RevenueMonth(" +
-            "MONTH(oi.order.createdAt), " +
-            "SUM(oi.priceAtOrderTime * oi.quantity), " +
-            "COUNT(oi)) " +
-            "FROM OrderItem oi " +
-            "WHERE oi.order.paymentStatus = 'PAID' " +
-            "AND oi.order.isDelete <> true " +
-            "AND YEAR(oi.order.createdAt) = :year " +
-            "GROUP BY MONTH(oi.order.createdAt) " +
-            "ORDER BY MONTH(oi.order.createdAt)")
-    List<RevenueMonth> getRevenueByMonth(@Param("year") Integer year);
+
+//    @Query("""
+//    SELECT new org.example.laptopstore.dto.response.order.RevenueMonth(
+//        MONTH(o.createdAt),
+//        SUM(oi.priceAtOrderTime * oi.quantity),
+//        SUM(oi.quantity),
+//        COUNT(DISTINCT o.user.id)
+//    )
+//    FROM Order o
+//    JOIN o.orderItems oi
+//    WHERE o.paymentStatus = 'PAID'
+//    AND o.isDelete <> true
+//    AND YEAR(o.createdAt) = :year
+//    GROUP BY MONTH(o.createdAt)
+//    ORDER BY MONTH(o.createdAt)
+//    """)
+//    List<RevenueMonth> getRevenueByMonth(@Param("year") Integer year);
+@Query("""
+    SELECT new org.example.laptopstore.dto.response.order.RevenueMonth(
+        MONTH(o.createdAt),
+        SUM(DISTINCT o.paidAmount),    
+        SUM(oi.quantity),              
+        COUNT(DISTINCT o.user.id)      
+    )
+    FROM Order o
+    LEFT JOIN o.orderItems oi
+    WHERE o.paymentStatus = 'PAID'
+      AND o.isDelete <> true
+      AND YEAR(o.createdAt) = :year
+    GROUP BY MONTH(o.createdAt)
+    ORDER BY MONTH(o.createdAt)
+""")
+List<RevenueMonth> getRevenueByMonth(@Param("year") Integer year);
+
+
+
+
+
+
+
 
     @Query("""
     SELECT CASE WHEN COUNT(oi) > 0 THEN true ELSE false END

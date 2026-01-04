@@ -380,6 +380,36 @@ public class ChatService {
 
         return sb.toString();
     }
+//    private String formatOptions(List<ProductOption> list) {
+//        StringBuilder sb = new StringBuilder();
+//        sb.append("Danh sách gợi ý (tối đa 10):\\n");
+//
+//        int i = 1;
+//        for (ProductOption o : list) {
+//            sb.append("#### ").append(i++).append(". ")
+//                    .append(o.getProduct().getName()).append("\n")
+//                    .append("- 💰 **Giá:** ").append(o.getPrice()).append(" VNĐ\n")
+//                    .append("- 🧠 **CPU:** ").append(nullSafe(o.getCpu())).append("\n")
+//                    .append("- 🎮 **GPU:** ").append(nullSafe(o.getGpu())).append("\n")
+//                    .append("- 🧩 **RAM:** ").append(nullSafe(o.getRam())).append("\n")
+//                    .append("- 🎨 **Màu:** ");
+//
+//            if (o.getProductVariants() != null && !o.getProductVariants().isEmpty()) {
+//                sb.append(
+//                        o.getProductVariants().stream()
+//                                .map(ProductVariant::getColor)
+//                                .reduce((a, b) -> a + ", " + b)
+//                                .orElse("-")
+//                );
+//            } else sb.append("-");
+//
+//            sb.append("\n\n");
+//
+//            if (i > 10) break;
+//        }
+//        return sb.toString();
+//    }
+
 
     private String nullSafe(String s) {
         return s == null ? "-" : s;
@@ -470,6 +500,8 @@ public class ChatService {
                 dbContext,
                 chatHistoryRepository.findLast10(userId)
         );
+
+
 
         saveAIHistory(userId, answer);
         return answer;

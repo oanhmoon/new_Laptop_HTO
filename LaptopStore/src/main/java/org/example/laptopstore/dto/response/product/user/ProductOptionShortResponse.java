@@ -10,18 +10,11 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 public class ProductOptionShortResponse {
-
     private Long id;
-
     private String code;
-
     private String cpu;
-
     private String ram;
-
     private String gpu;
-
     private String storage;
-
     private BigDecimal price;
 }

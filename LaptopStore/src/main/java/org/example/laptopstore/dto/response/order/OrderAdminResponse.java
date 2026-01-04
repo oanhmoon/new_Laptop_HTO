@@ -8,6 +8,7 @@ import org.example.laptopstore.util.enums.OrderStatus;
 import org.example.laptopstore.util.enums.PaymentMethod;
 import org.example.laptopstore.util.enums.PaymentStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -24,6 +25,7 @@ public class OrderAdminResponse {
     private DiscountResponse discount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private BigDecimal paidAmount;
     private List<OrderItemResponse> orderItems;
     private String refundReason;
     private String refundImageUrl;

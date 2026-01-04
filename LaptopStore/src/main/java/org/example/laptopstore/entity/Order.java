@@ -64,6 +64,10 @@ public class Order {
     @Column(name = "discount")
     private BigDecimal discount;
 
+    @NotNull
+    @Column(name = "paid_amount")
+    private BigDecimal paidAmount;
+
     @Column(name = "is_delete")
     private Boolean isDelete;
 

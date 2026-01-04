@@ -7,6 +7,8 @@ import org.example.laptopstore.dto.response.ApiResponse;
 
 import org.example.laptopstore.dto.response.account.LoginResponse;
 import org.example.laptopstore.dto.response.account.RegisterReponse;
+import org.example.laptopstore.exception.AppException;
+import org.example.laptopstore.exception.ErrorCode;
 import org.example.laptopstore.service.UserAccountService;
 import org.example.laptopstore.service.impl.EmailService;
 import org.example.laptopstore.util.Validation;
@@ -45,12 +47,12 @@ public class AuthController {
     public ApiResponse<Object> resetPassword(@RequestBody ResetPasswordRequest request) {
 
         // Validate mật khẩu mới
-        if (!Validation.isValidPassword(request.getNewPassword())) {
-            return ApiResponse.builder()
-                    .message("Mật khẩu phải ít nhất 8 ký tự, bao gồm chữ, số và ký tự đặc biệt")
-                    .code(400)
-                    .build();
-        }
+//        if (!Validation.isValidPassword(request.getNewPassword())) {
+//            return ApiResponse.builder()
+//                    .message("Mật khẩu phải ít nhất 8 ký tự, bao gồm chữ, số và ký tự đặc biệt")
+//                    .code(400)
+//                    .build();
+//        }
 
         userService.resetPassword(request);
         return ApiResponse.builder()
@@ -60,23 +62,26 @@ public class AuthController {
     }
 
     // ------------------ ĐĂNG KÝ TÀI KHOẢN ------------------
+
     @PostMapping("/register/request-otp")
     public ApiResponse<Object> requestOtp(@RequestBody RegisterRequest request) {
-        if (userService.existsByEmail(request.getEmail())) {
-            return ApiResponse.builder()
-                    .code(400)
-                    .message("Email đã được sử dụng")
-                    .build();
+        if (userService.getUserByUsername(request.getUsername()) != null) {
+            throw new AppException(ErrorCode.USERNAME_EXISTS);
         }
 
-        String otp = userService.generateOtp(request.getEmail());
-        emailService.sendOtp(request.getEmail(), otp);
+        if (userService.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.EMAIL_EXISTS);
+        }
+
+        emailService.sendRegisterOtp(request.getEmail());
 
         return ApiResponse.builder()
                 .code(200)
                 .message("Đã gửi OTP đến email của bạn")
                 .build();
     }
+
+
 
     @PostMapping("/register/verify-otp")
     public ApiResponse<Object> verifyOtp(@RequestBody VerifyOtpRequest request) {

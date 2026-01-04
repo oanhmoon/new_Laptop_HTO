@@ -14,22 +14,13 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProductUserResponse {
-
     private Long id;
-
     private String name;
-
     private String description;
-
     private CategoryResponse category;
-
     private BrandResponse brand;
-
     List<ImageThumbnailResponse> images;
-
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
-
     private Boolean isDelete;
 }

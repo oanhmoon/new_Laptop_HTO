@@ -49,19 +49,13 @@ public class UserAccountServiceImpl implements UserAccountService {
 
 
     // Lưu OTP tạm thời trong bộ nhớ
-    private final Map<String, String> otpCache = new ConcurrentHashMap<>();
+    //private final Map<String, String> otpCache = new ConcurrentHashMap<>();
 
     @Override
     public boolean existsByEmail(String email) {
         return userRepository.findByEmail(email) != null;
     }
 
-    @Override
-    public String generateOtp(String email) {
-        String otp = String.valueOf((int) (Math.random() * 900000) + 100000);
-        otpCache.put(email, otp);
-        return otp;
-    }
 
     @Override
     @Transactional
@@ -101,10 +95,6 @@ public class UserAccountServiceImpl implements UserAccountService {
         return modelMapper.map(userRepository.save(user), RegisterReponse.class);
     }
 
-    // Thêm getter cho OTP nếu cần xác minh ở controller
-    public String getOtpByEmail(String email) {
-        return otpCache.get(email);
-    }
 
 
     @Override
@@ -213,6 +203,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         return userRepository.getTotalUserByMonthAndYear(month, year);
     }
 
+
     @Override
     public void forgotPassword(String email) {
         User user = userRepository.findByEmail(email);
@@ -220,32 +211,38 @@ public class UserAccountServiceImpl implements UserAccountService {
             throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
 
-        // Tạo OTP 6 chữ số
-        String otp = String.valueOf((int)(Math.random() * 900000) + 100000);
-
-        // Gửi OTP qua email
-        emailService.sendOtpForPasswordReset(email, otp);
+        emailService.sendOtpForPasswordReset(email);
     }
+
 
     @Override
     public void resetPassword(ResetPasswordRequest request) {
-        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new AppException(ErrorCode.INVALID_PASSWORD); // Mật khẩu không khớp
-        }
 
-        // Kiểm tra OTP
+        // Check OTP
         boolean validOtp = emailService.verifyOtp(request.getEmail(), request.getOtp());
         if (!validOtp) {
-            throw new AppException(ErrorCode.INVALID_OTP); // Hoặc tạo ErrorCode OTP_INVALID
+            throw new AppException(ErrorCode.INVALID_OTP);
         }
 
+        // Check user
         User user = userRepository.findByEmail(request.getEmail());
         if (user == null) {
             throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
 
+        // Check password
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new AppException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        if (!Validation.isValidPassword(request.getNewPassword())) {
+            throw new AppException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        // Save
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
     }
+
 
 }

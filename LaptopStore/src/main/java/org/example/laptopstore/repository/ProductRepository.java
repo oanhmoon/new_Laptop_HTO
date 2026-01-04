@@ -14,6 +14,8 @@ import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
+    boolean existsByNameAndIsDeleteFalse(String name);
+    boolean existsByNameAndIdNotAndIsDeleteFalse(String name, Long id);
 
     Optional<Product> findByIdAndIsDeleteFalse(Long id);
 

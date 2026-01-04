@@ -21,7 +21,7 @@ public class CartItemResponse {
     private BigDecimal basePrice;
     private String imageUrl;
     private Integer quantity;
-    private Integer availableStock;  // số lượng tồn kho hiện tại của variant
+    private Integer availableStock;
 
 
     public CartItemResponse(Long id,

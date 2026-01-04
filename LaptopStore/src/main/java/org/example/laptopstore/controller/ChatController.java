@@ -60,7 +60,7 @@ private final SimpMessagingTemplate messagingTemplate;
         );
     }
 
-    // Upload endpoint: upload file to Cloudinary via server and return secure_url
+    // upload file to Cloudinary
     @PostMapping("/api/v1/chat/upload")
     public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
         try {

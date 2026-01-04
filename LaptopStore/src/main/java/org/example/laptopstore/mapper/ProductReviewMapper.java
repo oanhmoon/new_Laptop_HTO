@@ -81,18 +81,12 @@ import java.util.List;
 public class ProductReviewMapper {
     private final ModelMapper modelMapper;
 
-
-
-
     public ProductReview mapRequestToEntity(ProductReviewRequest req) {
         ProductReview r = new ProductReview();
         r.setRating(req.getRating());
         r.setComment(req.getComment());
         return r;
     }
-
-
-
 
     public ProductReviewResponse toProductReviewResponse(ProductReview entity) {
         ProductReviewResponse res = new ProductReviewResponse();
@@ -119,13 +113,10 @@ public class ProductReviewMapper {
                 .filter(m -> m.getType().equals("VIDEO"))
                 .map(ProductReviewMedia::getUrl)
                 .toList();
-
         res.setImages(images);
         res.setVideos(videos);
-
         return res;
     }
-
 
 }
 

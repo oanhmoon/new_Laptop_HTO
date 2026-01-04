@@ -11,6 +11,7 @@ import org.example.laptopstore.util.Constant;
 import org.example.laptopstore.util.enums.DiscountType;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,24 +53,53 @@ public class DiscountController {
         return ApiResponse.builder().code(HttpStatus.OK.value()).message(Constant.SUCCESS_MESSAGE).data(discountResponse).build();
     }
 
-    @PostMapping("/create")
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
-    public ApiResponse<Object> createDiscount(@RequestBody @Valid DiscountRequest discountRequest) {
-        DiscountResponse discountResponse = discountService.createDiscount(discountRequest);
-        return ApiResponse.builder().code(HttpStatus.CREATED.value()).message(Constant.SUCCESS_MESSAGE).data(discountResponse).build();
-    }
 
-    @PutMapping("/update/{id}")
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
-    public ApiResponse<Object> updateDiscount(@PathVariable Long id, @RequestBody @Valid DiscountRequest discountRequest) {
-        DiscountResponse discountResponse = discountService.updateDiscount(id, discountRequest);
-        return ApiResponse.builder().code(HttpStatus.OK.value()).message(Constant.SUCCESS_MESSAGE).data(discountResponse).build();
-    }
+@PostMapping("/create")
+public ResponseEntity<ApiResponse<Object>> createDiscount(
+        @RequestBody @Valid DiscountRequest discountRequest) {
 
-    @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
-    public ApiResponse<Object> deleteDiscount(@PathVariable Long id) {
-        discountService.deleteDiscount(id);
-        return ApiResponse.builder().code(HttpStatus.NO_CONTENT.value()).message(Constant.SUCCESS_MESSAGE).build();
-    }
+    DiscountResponse discountResponse =
+            discountService.createDiscount(discountRequest);
+
+    return ResponseEntity.status(HttpStatus.CREATED).body(
+            ApiResponse.builder()
+                    .code(HttpStatus.CREATED.value())
+                    .message(Constant.SUCCESS_MESSAGE)
+                    .data(discountResponse)
+                    .build()
+    );
+}
+
+
+
+@PutMapping("/update/{id}")
+@PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+public ResponseEntity<ApiResponse<Object>> updateVoucher(
+        @PathVariable Long id,
+        @RequestBody @Valid DiscountRequest discountRequest) {
+
+    DiscountResponse discountResponse =
+            discountService.updateDiscount(id, discountRequest);
+
+    return ResponseEntity.ok(
+            ApiResponse.builder()
+                    .code(HttpStatus.OK.value())
+                    .message(Constant.SUCCESS_MESSAGE)
+                    .data(discountResponse)
+                    .build()
+    );
+}
+
+
+
+@DeleteMapping("/delete/{id}")
+@PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+public ResponseEntity<ApiResponse<Object>> deleteVoucher(
+        @PathVariable Long id) {
+
+    discountService.deleteDiscount(id);
+
+    return ResponseEntity.noContent().build();
+}
+
 }

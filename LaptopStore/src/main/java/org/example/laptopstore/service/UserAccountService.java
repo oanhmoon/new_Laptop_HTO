@@ -23,7 +23,7 @@ public interface UserAccountService {
 
     LoginResponse login(LoginRequest request) throws ParseException;
     boolean existsByEmail(String email);
-    String generateOtp(String email);
+    //String generateOtp(String email);
     RegisterReponse register(RegisterRequest request);
 
     User saveUser(User user);

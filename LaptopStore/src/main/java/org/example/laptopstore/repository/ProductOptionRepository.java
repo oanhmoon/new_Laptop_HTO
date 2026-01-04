@@ -17,6 +17,8 @@ import java.util.Optional;
 public interface ProductOptionRepository extends JpaRepository<ProductOption, Long> {
     List<ProductOption> findByPriceLessThanEqual(BigDecimal price);
     List<ProductOption> findTop10ByOrderByPriceAsc();
+    boolean existsByCodeAndIsDeleteFalse(String code);
+
     // Tìm theo màu sắc (ProductVariant)
     @Query("SELECT po FROM ProductOption po JOIN po.productVariants v WHERE LOWER(v.color) LIKE LOWER(CONCAT('%', :color, '%'))")
     List<ProductOption> findByColor(@Param("color") String color);

@@ -14,17 +14,11 @@ import java.util.List;
 public class ProductReviewResponse {
 
     private Long id;
-
     private UserResponse user;
-
     private Integer rating;
-
     private String comment;
-
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
-
     private List<String> images;
     private List<String> videos;
 

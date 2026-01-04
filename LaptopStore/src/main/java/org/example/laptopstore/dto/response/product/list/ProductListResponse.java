@@ -15,26 +15,15 @@ import java.util.List;
 @AllArgsConstructor
 public class ProductListResponse {
     private Long id;
-
     private String name;
-
     private String description;
-
     private CategoryResponse category;
-
     private BrandResponse brand;
-
     private Long salesCount;
-
     private Double ratingAverage;
-
     List<ImageThumbnailResponse> images;
-
     private Long stock;
-
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
-
     private Boolean isDelete;
 }

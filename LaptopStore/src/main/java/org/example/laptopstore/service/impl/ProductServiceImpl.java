@@ -11,6 +11,7 @@ import org.example.laptopstore.dto.response.product.list.ProductListResponse;
 import org.example.laptopstore.dto.response.product.user.ProductOptionDetailUserResponse;
 import org.example.laptopstore.dto.response.product.user.ProductOptionListUserResponse;
 import org.example.laptopstore.entity.*;
+import org.example.laptopstore.exception.ConflictException;
 import org.example.laptopstore.exception.NotFoundException;
 import org.example.laptopstore.mapper.ProductMapper;
 import org.example.laptopstore.mapper.ProductOptionMapper;
@@ -28,9 +29,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -83,7 +82,26 @@ public class ProductServiceImpl implements ProductService {
         product.setBrand(brand);
         product.setCategory(category);
 
-        // Lưu product (chưa có ảnh ở product nữa)
+        // ===== CHECK TRÙNG TÊN PRODUCT =====
+        if (productRepository.existsByNameAndIsDeleteFalse(productRequest.getName())) {
+            throw new ConflictException("Tên sản phẩm đã tồn tại");
+        }
+
+// ===== CHECK TRÙNG OPTION CODE (DB + REQUEST) =====
+        Set<String> codes = new HashSet<>();
+        for (var opt : productRequest.getOptions()) {
+
+            // trùng trong request
+            if (!codes.add(opt.getCode())) {
+                throw new ConflictException("Trùng mã option trong cùng sản phẩm");
+            }
+
+            // trùng trong DB
+            if (productOptionRepository.existsByCodeAndIsDeleteFalse(opt.getCode())) {
+                throw new ConflictException("Mã option đã tồn tại: " + opt.getCode());
+            }
+        }
+
         Product productSave = productRepository.save(product);
 
         // Map và tạo productOptions (kèm images và variants)
@@ -132,10 +150,14 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findByIdAndIsDeleteFalse(productId)
                 .orElseThrow(() -> new NotFoundException("Product not found"));
 
-        // Danh sách Options mới sau khi xử lý (bao gồm cũ và mới)
+
+        if (productRepository.existsByNameAndIdNotAndIsDeleteFalse(req.getName(), productId)) {
+            throw new ConflictException("Tên sản phẩm đã tồn tại");
+        }
+
         List<ProductOption> optionsToPersist = new ArrayList<>();
 
-        // UPDATE FIELD PRIMITIVE (Thông tin cơ bản của Product)
+
         product.setName(req.getName());
         product.setDescription(req.getDescription());
 
@@ -152,7 +174,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
 
-        // 1 XÓA PRODUCT OPTION (Soft Delete)
+        //  XÓA PRODUCT OPTION (Soft Delete)
 
         if (req.getDeletedOptionIds() != null) {
             for (Long opId : req.getDeletedOptionIds()) {
@@ -179,6 +201,23 @@ public class ProductServiceImpl implements ProductService {
 
 
         // 2 UPDATE / CREATE PRODUCT OPTIONS
+        // ===== CHECK TRÙNG OPTION CODE KHI UPDATE =====
+        Set<String> codes = new HashSet<>();
+
+        for (ProductOptionUpdateRequest oReq : req.getOptions()) {
+
+            // trùng trong request
+            if (!codes.add(oReq.getCode())) {
+                throw new ConflictException("Trùng mã option trong cùng sản phẩm");
+            }
+
+            // trùng DB (bỏ qua chính option đang update)
+            if (oReq.getId() == null) {
+                if (productOptionRepository.existsByCodeAndIsDeleteFalse(oReq.getCode())) {
+                    throw new ConflictException("Mã option đã tồn tại: " + oReq.getCode());
+                }
+            }
+        }
 
         if (req.getOptions() != null) {
             for (ProductOptionUpdateRequest oReq : req.getOptions()) {

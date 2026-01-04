@@ -76,8 +76,7 @@ public class ProductMapper {
             }).toList());
         }
         productResponse.setCategory(modelMapper.map(product.getCategory(), CategoryResponse.class));
-//        List<ImageThumbnailResponse> imageThumbnailResponses = product.getImages().stream().map(image -> modelMapper.map(image, ImageThumbnailResponse.class)).toList();
-//        productResponse.setImages(imageThumbnailResponses);
+
         return productResponse;
     }
 
@@ -88,8 +87,7 @@ public class ProductMapper {
         ProductUserResponse productUserResponse = modelMapper.map(product, ProductUserResponse.class);
         productUserResponse.setBrand(brandMapper.toResponse(product.getBrand()));
         productUserResponse.setCategory(modelMapper.map(product.getCategory(), CategoryResponse.class));
-//        List<ImageThumbnailResponse> imageThumbnailResponses = product.getImages().stream().map(image -> modelMapper.map(image, ImageThumbnailResponse.class)).toList();
-//        productUserResponse.setImages(imageThumbnailResponses);
+
         return productUserResponse;
     }
 
@@ -109,20 +107,7 @@ public class ProductMapper {
         return productOptionListUserResponse;
     }
 
-//    public ProductListResponse toProductListAdminResponse(Product product, double averageRating, long salesCount, long stock) {
-//        if (product == null) {
-//            return null;
-//        }
-//        ProductListResponse productListResponse = modelMapper.map(product, ProductListResponse.class);
-//        productListResponse.setBrand(brandMapper.toResponse(product.getBrand()));
-//        productListResponse.setSalesCount(salesCount);
-//        productListResponse.setRatingAverage(averageRating);
-//        productListResponse.setStock(stock);
-//        productListResponse.setCategory(modelMapper.map(product.getCategory(), CategoryResponse.class));
-////        List<ImageThumbnailResponse> imageThumbnailResponses = product.getImages().stream().map(image -> modelMapper.map(image, ImageThumbnailResponse.class)).toList();
-////        productListResponse.setImages(imageThumbnailResponses);
-//        return productListResponse;
-//    }
+
 public ProductListResponse toProductListAdminResponse(Product product, double averageRating, long salesCount, long stock) {
     if (product == null) {
         return null;
@@ -136,7 +121,7 @@ public ProductListResponse toProductListAdminResponse(Product product, double av
     productListResponse.setStock(stock);
     productListResponse.setCategory(modelMapper.map(product.getCategory(), CategoryResponse.class));
 
-    // 🔥 LẤY ẢNH TỪ OPTION ĐẦU TIÊN
+    // LẤY ẢNH TỪ OPTION ĐẦU TIÊN
     if (product.getProductOptions() != null && !product.getProductOptions().isEmpty()) {
 
         ProductOption firstOption = product.getProductOptions().stream()

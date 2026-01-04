@@ -46,7 +46,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     @Transactional
 
     public ProductReviewResponse createProductReview(ProductReviewRequest productReviewRequest) throws ParseException {
-        // 🔹 Lấy user từ token JWT
+        // Lấy user từ token JWT
         String token = tokenService.getJWT();
         String username = tokenService.getClaim(token, SUB);
         User user = userRepository.findByUsername(username);

@@ -36,7 +36,7 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
         favorite.setUser(user);
         favorite.setProductOption(option);
         favoriteRepository.save(favorite);
-        retrainService.notifyRetrain();
+        //retrainService.notifyRetrain();
     }
 
     @Override
@@ -52,7 +52,7 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
                 .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không nằm trong danh sách yêu thích"));
 
         favoriteRepository.delete(favorite);
-        retrainService.notifyRetrain();
+        //retrainService.notifyRetrain();
     }
 
     @Override

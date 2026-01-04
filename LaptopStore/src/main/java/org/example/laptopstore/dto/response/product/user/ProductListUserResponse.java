@@ -13,18 +13,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ProductListUserResponse {
     private Long id;
-
     private String name;
-
     private String description;
-
     private CategoryResponse category;
-
     private BrandResponse brand;
-
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
-
     private Boolean isDelete;
 }

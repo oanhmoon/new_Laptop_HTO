@@ -39,7 +39,6 @@ public class CartItemServiceImpl implements CartItemService {
         return new PageResponse<>(cartItems);
     }
 
-
     @Override
     @Transactional
     public QuantityChange setChangeQuantity(Long cartId,Integer quantity) {
@@ -51,8 +50,7 @@ public class CartItemServiceImpl implements CartItemService {
         cartItem.setQuantity(quantity);
         cartItemRepository.save(cartItem);
 
-        retrainService.notifyRetrain();
-
+        //retrainService.notifyRetrain();
         QuantityChange quantityChange = new QuantityChange();
         quantityChange.setIdCartItem(cartItem.getId());
         quantityChange.setResult("Quantity changed to " + cartItem.getQuantity());
@@ -65,13 +63,13 @@ public class CartItemServiceImpl implements CartItemService {
     public void removeListCartItem(List<Long> listIdCart) {
         List<CartItem> cartItems = cartItemRepository.findAllById(listIdCart);
         cartItemRepository.deleteAll(cartItems);
-        retrainService.notifyRetrain();
+        //retrainService.notifyRetrain();
     }
 
     @Override
     public void removeCartItem(Long idCartItem) {
         cartItemRepository.delete(cartItemRepository.findById(idCartItem).orElseThrow());
-        retrainService.notifyRetrain();
+        //retrainService.notifyRetrain();
     }
 
 
@@ -115,7 +113,7 @@ public class CartItemServiceImpl implements CartItemService {
         newCartItem.setProductVariant(productVariant);
 
         cartItemRepository.save(newCartItem);
-        retrainService.notifyRetrain();
+        //retrainService.notifyRetrain();
         return modelMapper.map(newCartItem, CartItemResponse.class);
     }
 

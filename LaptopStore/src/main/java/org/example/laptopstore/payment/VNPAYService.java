@@ -31,11 +31,11 @@ import static org.example.laptopstore.payment.VNPAYConfig.vnp_HashSecret;
 @RequiredArgsConstructor
 public class VNPAYService {
     private final UserAccountService userAccountService;
-    //private final PaymentService paymentService;
+
     private final TokenService tokenService;
     private static final Logger logger = LoggerFactory.getLogger(VNPAYService.class);
     public String createOrder(HttpServletRequest request, long  amount, String orderInfor){
-        //Các bạn có thể tham khảo tài liệu hướng dẫn và điều chỉnh các tham số
+
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
         String vnp_TxnRef =  orderInfor;//VNPAYConfig.getRandomNumber(8);

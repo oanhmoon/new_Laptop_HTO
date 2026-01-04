@@ -3,6 +3,7 @@ package org.example.laptopstore.service.impl;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.example.laptopstore.entity.Order;
 import org.example.laptopstore.entity.OrderItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 @RequiredArgsConstructor
 @Service
@@ -28,7 +31,19 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
     private final Map<String, String> otpCache = new ConcurrentHashMap<>();
+    private final Map<String, OtpInfo> registerOtpCache = new ConcurrentHashMap<>();
+    private final Map<String, OtpInfo> resetPasswordOtpCache = new ConcurrentHashMap<>();
+
     private final Set<String> verifiedEmails = ConcurrentHashMap.newKeySet();
+
+
+    @Data
+    @AllArgsConstructor
+    public class OtpInfo {
+        private String otp;
+        private long expiredAt;
+    }
+
     public void sendOtp(String recipientEmail, String otp) {
         try {
             String subject = "Mã OTP xác thực đăng ký";
@@ -38,7 +53,7 @@ public class EmailService {
                     <p>Xin chào,</p>
                     <p>Mã OTP để xác minh đăng ký của bạn là:</p>
                     <h2 style='color:blue;'>%s</h2>
-                    <p>Vui lòng nhập mã này trong vòng 5 phút.</p>
+                    <p>Vui lòng nhập mã này trong vòng 1 phút.</p>
                 </body>
                 </html>
             """.formatted(otp);
@@ -58,14 +73,38 @@ public class EmailService {
     }
 
     public boolean verifyRegisterOtp(String email, String otp) {
-        if (!otpCache.containsKey(email)) return false;
-        boolean valid = otpCache.get(email).equals(otp);
+        email = email.trim().toLowerCase();
+        otp = otp.trim();
+
+        OtpInfo otpInfo = registerOtpCache.get(email);
+        if (otpInfo == null) return false;
+
+        // Hết hạn
+        if (System.currentTimeMillis() > otpInfo.getExpiredAt()) {
+            registerOtpCache.remove(email);
+            return false;
+        }
+
+        boolean valid = otpInfo.getOtp().equals(otp);
         if (valid) {
-            otpCache.remove(email);
+            registerOtpCache.remove(email);
             verifiedEmails.add(email);
         }
         return valid;
     }
+
+    public void sendRegisterOtp(String email) {
+        email = email.trim().toLowerCase();
+
+        String otp = String.valueOf((int)(Math.random() * 900000) + 100000);
+        long expiredAt = System.currentTimeMillis() + 60_000; // 1 phút
+
+        registerOtpCache.put(email, new OtpInfo(otp, expiredAt));
+        sendOtp(email, otp);
+    }
+
+
+
 
     public boolean isVerified(String email) {
         return verifiedEmails.contains(email);
@@ -100,7 +139,7 @@ public class EmailService {
             <div class="container">
                 <p>Bạn đã yêu cầu đặt lại mật khẩu. Mã OTP của bạn là:</p>
                 <p class="otp">%s</p>
-                <p>Hãy sử dụng mã này trong vòng 5 phút để đặt lại mật khẩu.</p>
+                <p>Hãy sử dụng mã này trong vòng 1 phút để đặt lại mật khẩu.</p>
                 <p>Trân trọng,<br>Đội ngũ bán hàng</p>
             </div>
         </body>
@@ -108,53 +147,130 @@ public class EmailService {
         """.formatted(otp);
     }
 
+    public void sendOtpForPasswordReset(String email) {
+        email = email.trim().toLowerCase();
+
+        String otp = String.valueOf((int)(Math.random() * 900000) + 100000);
+        long expiredAt = System.currentTimeMillis() + 60_000; // 1 phút
+
+        resetPasswordOtpCache.put(email, new OtpInfo(otp, expiredAt));
+        sendOtpForPasswordReset(email, otp);
+    }
+
     public boolean verifyOtp(String email, String otp) {
-        if (!otpCache.containsKey(email)) return false;
-        boolean valid = otpCache.get(email).equals(otp);
-        if (valid) otpCache.remove(email);
+        email = email.trim().toLowerCase();
+        otp = otp.trim();
+
+        OtpInfo otpInfo = resetPasswordOtpCache.get(email);
+        if (otpInfo == null) return false;
+
+        // Hết hạn
+        if (System.currentTimeMillis() > otpInfo.getExpiredAt()) {
+            resetPasswordOtpCache.remove(email);
+            return false;
+        }
+
+        boolean valid = otpInfo.getOtp().equals(otp);
+        if (valid) {
+            resetPasswordOtpCache.remove(email);
+        }
         return valid;
     }
-    public void sendPaymentTimeoutNotification(String recipientEmail, String customerName,
-                                               String orderId, String expiryTime, List<OrderItem> items) {
-        try {
-            String subject = String.format("Thông báo: Đơn hàng #%s đã hết hạn thanh toán", orderId);
-            String content = buildPaymentTimeoutEmailContent(customerName, orderId, expiryTime, items);
 
-            MimeMessage message = createEmailMessage(recipientEmail, subject, content);
-            mailSender.send(message);
 
-            LOGGER.info("Successfully sent payment timeout email to: {}", recipientEmail);
-        } catch (MessagingException e) {
-            LOGGER.error("Failed to send payment timeout email to: {}", recipientEmail, e);
-        }
+//    public void sendPaymentTimeoutNotification(String recipientEmail, String customerName,
+//                                               String orderId, String expiryTime, List<OrderItem> items) {
+//        try {
+//            String subject = String.format("Thông báo: Đơn hàng #%s đã hết hạn thanh toán", orderId);
+//            String content = buildPaymentTimeoutEmailContent(customerName, orderId, expiryTime, items);
+//
+//            MimeMessage message = createEmailMessage(recipientEmail, subject, content);
+//            mailSender.send(message);
+//
+//            LOGGER.info("Successfully sent payment timeout email to: {}", recipientEmail);
+//        } catch (MessagingException e) {
+//            LOGGER.error("Failed to send payment timeout email to: {}", recipientEmail, e);
+//        }
+//    }
+public void sendPaymentTimeoutNotification(
+        Order order,
+        String expiryTime,
+        List<OrderItem> items
+) {
+    NumberFormat currencyFormatter = getVietnameseCurrencyFormatter();
+
+    String productRows = buildProductTableRows(items, currencyFormatter);
+
+    BigDecimal paidAmount = order.getPaidAmount();
+
+    String content = EmailTemplates.PAYMENT_TIMEOUT_TEMPLATE
+            .replace("${customerName}", order.getInfoUserReceive().getFullName())
+            .replace("${orderId}", "ORD-" + order.getId())
+            .replace("${expiryTime}", expiryTime)
+            .replace("${productRows}", productRows)
+            .replace("${totalAmount}", currencyFormatter.format(paidAmount));
+}
+
+
+    //    public void sendOrderSuccessEmail(String recipientEmail, String customerName,
+//                                      String orderId, List<OrderItem> items) {
+//        try {
+//            String subject = "Xác nhận đặt hàng thành công #" + orderId;
+//
+//            NumberFormat currencyFormatter = getVietnameseCurrencyFormatter();
+//
+//            String productRows = buildProductTableRows(items, currencyFormatter);
+//            BigDecimal total = calculateTotalAmount(items);
+//
+//            String content = EmailTemplates.ORDER_SUCCESS_TEMPLATE
+//                    .replace("${customerName}", customerName)
+//                    .replace("${orderId}", orderId)
+//                    .replace("${productRows}", productRows)
+//                    .replace("${totalAmount}", currencyFormatter.format(total))
+//                    .replace("${orderLink}", "https://yourwebsite.com/orders"); // thay bằng link trang của bạn
+//
+//            MimeMessage message = createEmailMessage(recipientEmail, subject, content);
+//            mailSender.send(message);
+//
+//            LOGGER.info("Order success email sent to {}", recipientEmail);
+//
+//        } catch (MessagingException e) {
+//            LOGGER.error("Failed to send order success email to {}", recipientEmail, e);
+//        }
+//    }
+public void sendOrderSuccessEmail(
+        Order order,
+        List<OrderItem> items
+) {
+    try {
+        String subject = "Xác nhận đặt hàng thành công #" + order.getId();
+
+        NumberFormat currencyFormatter = getVietnameseCurrencyFormatter();
+
+        String productRows = buildProductTableRows(items, currencyFormatter);
+
+        // ✅ TIỀN ĐÚNG – KHÔNG TÍNH LẠI
+        BigDecimal paidAmount = order.getPaidAmount();
+
+        String content = EmailTemplates.ORDER_SUCCESS_TEMPLATE
+                .replace("${customerName}", order.getInfoUserReceive().getFullName())
+                .replace("${orderId}", "ORD-" + order.getId())
+                .replace("${productRows}", productRows)
+                .replace("${totalAmount}", currencyFormatter.format(paidAmount))
+                .replace("${orderLink}", "https://yourwebsite.com/orders");
+
+        MimeMessage message = createEmailMessage(
+                order.getInfoUserReceive().getEmail(),
+                subject,
+                content
+        );
+
+        mailSender.send(message);
+
+    } catch (MessagingException e) {
+        LOGGER.error("Failed to send order success email", e);
     }
-
-    public void sendOrderSuccessEmail(String recipientEmail, String customerName,
-                                      String orderId, List<OrderItem> items) {
-        try {
-            String subject = "Xác nhận đặt hàng thành công #" + orderId;
-
-            NumberFormat currencyFormatter = getVietnameseCurrencyFormatter();
-
-            String productRows = buildProductTableRows(items, currencyFormatter);
-            BigDecimal total = calculateTotalAmount(items);
-
-            String content = EmailTemplates.ORDER_SUCCESS_TEMPLATE
-                    .replace("${customerName}", customerName)
-                    .replace("${orderId}", orderId)
-                    .replace("${productRows}", productRows)
-                    .replace("${totalAmount}", currencyFormatter.format(total))
-                    .replace("${orderLink}", "https://yourwebsite.com/orders"); // thay bằng link trang của bạn
-
-            MimeMessage message = createEmailMessage(recipientEmail, subject, content);
-            mailSender.send(message);
-
-            LOGGER.info("Order success email sent to {}", recipientEmail);
-
-        } catch (MessagingException e) {
-            LOGGER.error("Failed to send order success email to {}", recipientEmail, e);
-        }
-    }
+}
 
 
     private MimeMessage createEmailMessage(String recipientEmail, String subject, String content)

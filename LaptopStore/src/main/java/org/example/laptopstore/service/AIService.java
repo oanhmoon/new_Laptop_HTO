@@ -14,11 +14,18 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class AIService {
 
-    private final OkHttpClient client = new OkHttpClient();
+    //private final OkHttpClient client = new OkHttpClient();
+    private final OkHttpClient client = new OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build();
+
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Value("${openai.api.key:}")
@@ -115,6 +122,11 @@ public class AIService {
                 Bạn là trợ lý tư vấn laptop cao cấp của LaptopStore.
                 Hãy trả lời thân thiện, tự nhiên, dựa trên thông tin dưới đây.
                 Nếu thiếu dữ liệu, hãy hỏi lại người dùng.
+                Trình bày câu trả lời rõ ràng
+                Dùng gạch đầu dòng khi liệt kê
+                Mỗi sản phẩm tách thành từng khối
+                Không viết thành đoạn văn dài
+                Ưu tiên Markdown
                 Luôn trả lời bằng tiếng Việt.
                 """));
 

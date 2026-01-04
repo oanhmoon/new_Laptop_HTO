@@ -10,16 +10,10 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProductVariantResponse {
-
     private Long id;
-
     private String color;
-
     private BigDecimal priceDiff;
-
     private Integer stock;
-
     private String imageUrl;
-
     private Long salesCount;
 }

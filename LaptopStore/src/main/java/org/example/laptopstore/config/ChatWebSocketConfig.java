@@ -21,7 +21,7 @@ public class ChatWebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOrigins("http://localhost:3000") // Chỉ cho phép React frontend
+                .setAllowedOrigins("http://localhost:3000")
                 .withSockJS();
 
     }

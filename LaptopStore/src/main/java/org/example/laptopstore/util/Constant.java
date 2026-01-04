@@ -21,7 +21,7 @@ public class Constant {
     public static final String DEFAULT_ROLE_NOT_VALID = "Default role not found";
     public static final String USER_NOT_VALID = "Tài khoản không tồn tại";
     public static final String INVALID_PASSWORD_FAIL = "Mật khẩu bạn nhập không chính xác";
-    public static final String INVALID_OTP_FAIL = "Mật khẩu bạn nhập không chính xác";
+    public static final String INVALID_OTP_FAIL = "OTP bạn nhập không chính xác";
     public static final String NO_CONTENT_MESSAGE = "No content found";
     public static final String ERROR_LIST_EMPTY_MESSAGE = "List is empty";
     public static final String PAYMENT_NOT_VALID = "Payment not found";
@@ -30,7 +30,7 @@ public class Constant {
     public static final String NOT_FOUND_ROLE = "Role not found";
     public static final String VIP_TYPE_ERROR = "Type not found";
     public static final String VIP_PACKAGE_ERROR = "Package not found";
-    public static final String NOT_ENOUGH_QUANTITY_SYSTEM ="Not enough quantity";
+    public static final String NOT_ENOUGH_QUANTITY_SYSTEM ="Sản phẩm hiện tại đang hết hàng";
     //Genre Messages
     public static final String GENRE_NOT_FOUND = "Genre not found";
     public static final String GENRE_NAME_REQUIRED = "Genre name is required";

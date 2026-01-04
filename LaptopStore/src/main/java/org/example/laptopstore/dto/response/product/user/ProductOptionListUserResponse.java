@@ -11,31 +11,17 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProductOptionListUserResponse {
-
     private Long id;
-
     private ProductListUserResponse product;
-
     private ProductVariantResponse productVariant;
-
     private Long salesCount;
-
     private Double ratingAverage;
-
     private String code;
-
     private BigDecimal price;
-
     private String cpu;
-
     private String gpu;
-
     private String ram;
-
     private String ramType;
-
     private String storage;
-
     private String displaySize;
-
 }
