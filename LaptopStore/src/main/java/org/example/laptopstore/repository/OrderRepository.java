@@ -54,7 +54,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             Pageable pageable
     );
 
-
     @Query("SELECT new org.example.laptopstore.dto.response.order.RevenueYear(" +
             "YEAR(oi.order.createdAt), " +
             "SUM(oi.priceAtOrderTime * oi.quantity - oi.order.discount)) " +
@@ -65,22 +64,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<RevenueYear> getRevenueByYear();
 
 
-//    @Query("""
-//    SELECT new org.example.laptopstore.dto.response.order.RevenueMonth(
-//        MONTH(o.createdAt),
-//        SUM(oi.priceAtOrderTime * oi.quantity),
-//        SUM(oi.quantity),
-//        COUNT(DISTINCT o.user.id)
-//    )
-//    FROM Order o
-//    JOIN o.orderItems oi
-//    WHERE o.paymentStatus = 'PAID'
-//    AND o.isDelete <> true
-//    AND YEAR(o.createdAt) = :year
-//    GROUP BY MONTH(o.createdAt)
-//    ORDER BY MONTH(o.createdAt)
-//    """)
-//    List<RevenueMonth> getRevenueByMonth(@Param("year") Integer year);
+
 @Query("""
     SELECT new org.example.laptopstore.dto.response.order.RevenueMonth(
         MONTH(o.createdAt),
@@ -98,13 +82,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 """)
 List<RevenueMonth> getRevenueByMonth(@Param("year") Integer year);
 
-
-
-
-
-
-
-
     @Query("""
     SELECT CASE WHEN COUNT(oi) > 0 THEN true ELSE false END
     FROM OrderItem oi
@@ -119,7 +96,5 @@ List<RevenueMonth> getRevenueByMonth(@Param("year") Integer year);
             @Param("user") User user,
             @Param("productOption") ProductOption productOption
     );
-
-
 
 }

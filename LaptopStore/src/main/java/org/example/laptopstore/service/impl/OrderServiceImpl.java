@@ -66,92 +66,10 @@ public class OrderServiceImpl implements OrderSerivce {
     private final VNPAYService vnpayService;
 
     @Override
-//    public OrderResponse insertOrder(OrderRequest orderRequest) {
-//        // Khởi tạo và lưu thông tin người nhận hàng
-//        InfoUserReceive infoUserReceive = new InfoUserReceive();
-//        infoUserReceive.setFullName(orderRequest.getFullName());
-//        infoUserReceive.setWard(wardService.getWardById(orderRequest.getWardId()));
-//        infoUserReceive.setEmail(orderRequest.getEmail());
-//        infoUserReceive.setPhoneNumber(orderRequest.getPhoneNumber());
-//        infoUserReceive.setDetailAddress(orderRequest.getDetailAddress());
-//        InfoUserReceive savedInfo = infoUserReceiveService.save(infoUserReceive);
-//
-//        // Tạo đơn hàng
-//        Order order = new Order();
-//        order.setUser(userAccountService.getUserById(orderRequest.getUserId()));
-//        order.setInfoUserReceive(savedInfo);
-//        if(orderRequest.getPaymentMethod().equals(PaymentMethod.IN_APP)){
-//            BigDecimal total = BigDecimal.ZERO;
-//            for(OrderProductRequest orderProductRequest : orderRequest.getOrderProductRequestList()){
-//
-//                total = total.add(orderProductRequest.getPriceAtOrderTime());
-//            }
-//            order.setPaymentStatus(PaymentStatus.PAID);
-//            userAccountService.updateBalance(orderRequest.getUserId(),total);
-//        }
-//        else {
-//            order.setPaymentStatus(PaymentStatus.UNPAID);
-//        }
-//        order.setPaymentMethod(orderRequest.getPaymentMethod());
-//        order.setNote(orderRequest.getNote());
-//        order.setStatus(OrderStatus.PENDING);
-//        if(orderRequest.getDiscountId()!=null && orderRequest.getDiscountId() != -1){
-//            discountService.miniusDiscount(orderRequest.getDiscountId());
-//        }
-//        order.setDiscount(orderRequest.getDiscount());
-//        Order savedOrder = orderRepository.save(order);
-//
-//        // Lưu các sản phẩm trong đơn hàng
-//        List<OrderItem> orderItems = new ArrayList<>();
-//        List<Long> orderItemIds = new ArrayList<>();
-//
-//        for (OrderProductRequest productRequest : orderRequest.getOrderProductRequestList()) {
-//
-//            ProductVariant productVariant =
-//                    productVariantSerivce.getProductVariant(productRequest.getProductVariantId());
-//
-//            // ===== TRỪ STOCK (-) =====
-//            if (productVariant.getStock() < productRequest.getQuantity()) {
-//                throw new BadRequestException("Sản phẩm không đủ số lượng trong kho");
-//            }
-//            productVariant.setStock(productVariant.getStock() - productRequest.getQuantity());
-//            productVariantSerivce.save(productVariant);
-//
-//            OrderItem orderItem = new OrderItem();
-//            orderItemIds.add(productRequest.getIdCartItem());
-//            orderItem.setOrder(savedOrder);
-//            orderItem.setPriceAtOrderTime(productRequest.getPriceAtOrderTime());
-//            orderItem.setQuantity(productRequest.getQuantity());
-//            orderItem.setProductCode(productRequest.getProductCode());
-//            orderItem.setProductVariant(productVariant);
-//            orderItem.setProductName(productRequest.getProductName());
-//            orderItem.setProductColor(productRequest.getProductColor());
-//            orderItem.setProductImage(productRequest.getProductImage());
-//
-//            orderItems.add(orderItem);
-//        }
-//
-//        cartItemService.removeListCartItem(orderItemIds);
-//        orderItemsRepository.saveAll(orderItems);
-//
-//
-//        if(orderRequest.getPaymentMethod().equals(PaymentMethod.IN_APP)
-//                || orderRequest.getPaymentMethod().equals(PaymentMethod.COD)) {
-//
-//            emailService.sendOrderSuccessEmail(
-//                    savedOrder.getInfoUserReceive().getEmail(),
-//                    savedOrder.getInfoUserReceive().getFullName(),
-//                    "ORD-" + savedOrder.getId(),
-//                    orderItems
-//            );
-//        }
-//
-//
-//        return new OrderResponse(savedOrder.getId());
-//    }
+
     public OrderResponse insertOrder(OrderRequest orderRequest) {
 
-        /* ================== 1. LƯU INFO NHẬN HÀNG ================== */
+
         InfoUserReceive infoUserReceive = new InfoUserReceive();
         infoUserReceive.setFullName(orderRequest.getFullName());
         infoUserReceive.setWard(wardService.getWardById(orderRequest.getWardId()));
@@ -160,7 +78,7 @@ public class OrderServiceImpl implements OrderSerivce {
         infoUserReceive.setDetailAddress(orderRequest.getDetailAddress());
         InfoUserReceive savedInfo = infoUserReceiveService.save(infoUserReceive);
 
-        /* ================== 2. TÍNH TIỀN ORDER ================== */
+        /* TÍNH TIỀN ORDER */
         BigDecimal totalItemAmount = BigDecimal.ZERO;
 
         for (OrderProductRequest p : orderRequest.getOrderProductRequestList()) {
@@ -179,7 +97,7 @@ public class OrderServiceImpl implements OrderSerivce {
             paidAmount = BigDecimal.ZERO;
         }
 
-        /* ================== 3. TẠO ORDER ================== */
+        /* TẠO ORDER */
         Order order = new Order();
         order.setUser(userAccountService.getUserById(orderRequest.getUserId()));
         order.setInfoUserReceive(savedInfo);
@@ -187,9 +105,9 @@ public class OrderServiceImpl implements OrderSerivce {
         order.setNote(orderRequest.getNote());
         order.setStatus(OrderStatus.PENDING);
         order.setDiscount(discountAmount);
-        order.setPaidAmount(paidAmount); // ⭐ QUAN TRỌNG NHẤT
+        order.setPaidAmount(paidAmount);
 
-        /* ================== 4. THANH TOÁN ================== */
+        /* THANH TOÁN  */
         if (orderRequest.getPaymentMethod() == PaymentMethod.IN_APP) {
             userAccountService.updateBalance(orderRequest.getUserId(), paidAmount);
             order.setPaymentStatus(PaymentStatus.PAID);
@@ -197,14 +115,14 @@ public class OrderServiceImpl implements OrderSerivce {
             order.setPaymentStatus(PaymentStatus.UNPAID);
         }
 
-        /* ================== 5. TRỪ DISCOUNT ================== */
+        /* */
         if (orderRequest.getDiscountId() != null && orderRequest.getDiscountId() != -1) {
             discountService.miniusDiscount(orderRequest.getDiscountId());
         }
 
         Order savedOrder = orderRepository.save(order);
 
-        /* ================== 6. LƯU ORDER ITEMS + TRỪ STOCK ================== */
+        /*  */
         List<OrderItem> orderItems = new ArrayList<>();
         List<Long> orderItemIds = new ArrayList<>();
 
@@ -239,16 +157,10 @@ public class OrderServiceImpl implements OrderSerivce {
         orderItemsRepository.saveAll(orderItems);
         cartItemService.removeListCartItem(orderItemIds);
 
-        /* ================== 7. GỬI EMAIL ================== */
+        /*  GỬI EMAIL  */
         if (orderRequest.getPaymentMethod() == PaymentMethod.IN_APP
                 || orderRequest.getPaymentMethod() == PaymentMethod.COD) {
 
-//            emailService.sendOrderSuccessEmail(
-//                    savedOrder.getInfoUserReceive().getEmail(),
-//                    savedOrder.getInfoUserReceive().getFullName(),
-//                    "ORD-" + savedOrder.getId(),
-//                    orderItems
-//            );
             emailService.sendOrderSuccessEmail(
                     savedOrder,
                     orderItems
@@ -276,25 +188,6 @@ public class OrderServiceImpl implements OrderSerivce {
 
     @Override
     @Scheduled(fixedRate = 15 * 60 * 1000)
-//    public void restoreOrderToSystem() {
-//        LocalDateTime fifteenMinutesAgo = LocalDateTime.now().minusMinutes(15);
-//        List<Order> orders = orderRepository.findOrderStatus(PaymentStatus.UNPAID, PaymentMethod.VNPAY, fifteenMinutesAgo);
-//
-//        for (Order order : orders) {
-//            order.setPaymentStatus(PaymentStatus.FAILED);
-//            orderRepository.save(order);
-//            List<OrderItem> orderItems = orderItemsRepository.findByOrderId(order.getId());
-//            LocalDateTime now = LocalDateTime.now();
-//            DateTimeFormatter fullFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
-//            String formattedFull = now.format(fullFormatter);
-//            emailService.sendPaymentTimeoutNotification(order.getInfoUserReceive().getEmail(),order.getInfoUserReceive().getFullName(),"ORD-" + order.getId(),formattedFull,orderItems);
-//            for (OrderItem oi : orderItems) {
-//                ProductVariant productVariant = oi.getProductVariant();
-//                productVariant.setStock(productVariant.getStock() + oi.getQuantity());
-//                productVariantSerivce.save(productVariant);
-//            }
-//        }
-//    }
     @Transactional
     public void restoreOrderToSystem() {
 
@@ -309,15 +202,15 @@ public class OrderServiceImpl implements OrderSerivce {
 
         for (Order order : orders) {
 
-            /* ================== 1. SET TRẠNG THÁI THANH TOÁN FAILED ================== */
+            /*  SET TRẠNG THÁI THANH TOÁN FAILED  */
             order.setPaymentStatus(PaymentStatus.FAILED);
             orderRepository.save(order);
 
-            /* ================== 2. LẤY ORDER ITEMS ================== */
+
             List<OrderItem> orderItems =
                     orderItemsRepository.findByOrderId(order.getId());
 
-            /* ================== 3. GỬI EMAIL HẾT HẠN THANH TOÁN ================== */
+            /* */
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter formatter =
                     DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
@@ -329,7 +222,7 @@ public class OrderServiceImpl implements OrderSerivce {
                     orderItems
             );
 
-            /* ================== 4. HOÀN LẠI STOCK ================== */
+            /*  */
             for (OrderItem oi : orderItems) {
                 ProductVariant productVariant = oi.getProductVariant();
 
@@ -431,67 +324,14 @@ public class OrderServiceImpl implements OrderSerivce {
 
     @Override
     @Transactional
-//    public OrderResponse cancel(Long orderId) {
-//        Order order = orderRepository.findById(orderId)
-//                .orElseThrow(() -> new NotFoundException("Order not found"));
-//
-//
-//        if (order.getPaymentStatus() == PaymentStatus.PAID) {
-//
-//            // Tính số tiền đã thanh toán
-//            BigDecimal totalAmount = BigDecimal.ZERO;
-//            for (OrderItem oi : order.getOrderItems()) {
-//                totalAmount = totalAmount.add(
-//                        oi.getPriceAtOrderTime().multiply(BigDecimal.valueOf(oi.getQuantity()))
-//                );
-//            }
-//            // Xử lý giảm giá (nếu có)
-//            if (order.getDiscount() != null) {
-//                Optional<Discount> discountOptional = discountRepository.findById(order.getDiscount().longValue());
-//                if (discountOptional.isPresent()) {
-//                    Discount discount = discountOptional.get();
-//
-//                    if (discount.getDiscountType() == DiscountType.PERCENT) {
-//                        BigDecimal percent = discount.getDiscountValue()
-//                                .divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
-//                        totalAmount = totalAmount.multiply(BigDecimal.ONE.subtract(percent));
-//                    } else if (discount.getDiscountType() == DiscountType.FIXED) {
-//                        totalAmount = totalAmount.subtract(discount.getDiscountValue());
-//                    }
-//                }
-//            }
-//            // Hoàn tiền vào ví user
-//            User user = order.getUser();
-//            BigDecimal currentBalance = Optional.ofNullable(user.getBalance()).orElse(BigDecimal.ZERO);
-//            user.setBalance(currentBalance.add(totalAmount));
-//            userRepository.save(user);
-//
-//            order.setPaymentStatus(PaymentStatus.REFUNDED_SUCCESSFUL);
-//
-//        } else {
-//            order.setPaymentStatus(PaymentStatus.FAILED);
-//        }
-//
-//        // ️
-//        order.setStatus(OrderStatus.CANCELLED);
-//        //
-//        for (OrderItem oi : order.getOrderItems()) {
-//            ProductVariant productVariant = oi.getProductVariant();
-//            productVariant.setStock(productVariant.getStock() + oi.getQuantity());
-//            productVariantSerivce.save(productVariant);
-//        }
-//
-//        orderRepository.save(order);
-//
-//        return new OrderResponse(order.getId());
-//    }
+
     public OrderResponse cancel(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found"));
 
         if (order.getPaymentStatus() == PaymentStatus.PAID) {
 
-            // ✅ HOÀN TIỀN ĐÚNG – KHÔNG TÍNH LẠI
+            //
             BigDecimal refundAmount = order.getPaidAmount();
 
             User user = order.getUser();
@@ -504,11 +344,11 @@ public class OrderServiceImpl implements OrderSerivce {
             order.setPaymentStatus(PaymentStatus.REFUNDED_SUCCESSFUL);
 
         } else {
-            // ❗ GIỮ NGUYÊN THEO YÊU CẦU CỦA BẠN
+            //
             order.setPaymentStatus(PaymentStatus.FAILED);
         }
 
-        // ===== GIỮ NGUYÊN PHẦN CÒN LẠI =====
+        //
         order.setStatus(OrderStatus.CANCELLED);
 
         for (OrderItem oi : order.getOrderItems()) {
@@ -537,7 +377,7 @@ public OrderResponse updateStatus(Long orderId, OrderStatusRequest orderStatusRe
             .orElseThrow(() -> new NotFoundException("Order not found"));
     OrderStatus oldStatus = order.getStatus();
     OrderStatus newStatus = orderStatusRequest.getStatus();
-    // ===== HOÀN STOCK KHI ADMIN HỦY =====
+    //
     if (newStatus == OrderStatus.CANCELLED && oldStatus != OrderStatus.CANCELLED) {
         for (OrderItem oi : order.getOrderItems()) {
             ProductVariant pv = oi.getProductVariant();
@@ -572,46 +412,7 @@ public OrderResponse updateStatus(Long orderId, OrderStatusRequest orderStatusRe
 
     @Override
     @Transactional
-//    public OrderResponse acceptRefund(Long orderId) {
-//        Order order = orderRepository.findById(orderId).orElseThrow(() -> new NotFoundException("Order not found"));
-////        if(order.getPaymentMethod() == PaymentMethod.COD){
-////            throw new BadRequestException("Order with COD payment method is not eligible for refund");
-////        }
-//        if(order.getPaymentStatus() != PaymentStatus.REFUNDED) {
-//            throw new BadRequestException("Order is not eligible for refund");
-//        }
-//        order.setPaymentStatus(PaymentStatus.REFUNDED_SUCCESSFUL);
-//        // Update product stock
-//        BigDecimal totalAmount = BigDecimal.ZERO;
-//        for (OrderItem oi : order.getOrderItems()) {
-//            ProductVariant productVariant = oi.getProductVariant();
-//            Integer currentStock = Optional.ofNullable(productVariant.getStock()).orElse(0);
-//            productVariant.setStock(currentStock + oi.getQuantity());
-//            totalAmount = totalAmount.add(oi.getPriceAtOrderTime().multiply(BigDecimal.valueOf(oi.getQuantity())));
-//            productVariantSerivce.save(productVariant);
-//        }
-//        if(order.getDiscount() != null){
-//            Optional<Discount> discountOptional = discountRepository.findById(order.getDiscount().longValue());
-//            if(discountOptional.isPresent()){
-//                Discount discount = discountOptional.get();
-//                if(discount.getDiscountType() == DiscountType.PERCENT){
-//                    BigDecimal percent = discount.getDiscountValue()
-//                            .divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
-//                    totalAmount = totalAmount.multiply(BigDecimal.ONE.subtract(percent));
-//                } else if(discount.getDiscountType() == DiscountType.FIXED){
-//                    totalAmount = totalAmount.subtract(discount.getDiscountValue());
-//                }
-//            }
-//        }
-//
-//        User user = order.getUser();
-//        BigDecimal currentBalance = Optional.ofNullable(user.getBalance()).orElse(BigDecimal.ZERO);
-//        user.setBalance(currentBalance.add(totalAmount));
-//        order.setStatus(OrderStatus.RETURNED);
-//        userRepository.save(user);
-//        Order savedOrder = orderRepository.save(order);
-//        return new OrderResponse(savedOrder.getId());
-//    }
+
 
     public OrderResponse acceptRefund(Long orderId) {
 
@@ -622,7 +423,7 @@ public OrderResponse updateStatus(Long orderId, OrderStatusRequest orderStatusRe
             throw new BadRequestException("Order is not eligible for refund");
         }
 
-        // ===== HOÀN STOCK (GIỮ NGUYÊN) =====
+        //
         for (OrderItem oi : order.getOrderItems()) {
             ProductVariant productVariant = oi.getProductVariant();
             Integer currentStock = Optional.ofNullable(productVariant.getStock()).orElse(0);
@@ -630,7 +431,7 @@ public OrderResponse updateStatus(Long orderId, OrderStatusRequest orderStatusRe
             productVariantSerivce.save(productVariant);
         }
 
-        // ===== HOÀN TIỀN ĐÚNG =====
+        //
         BigDecimal refundAmount = order.getPaidAmount();
 
         User user = order.getUser();
@@ -640,7 +441,7 @@ public OrderResponse updateStatus(Long orderId, OrderStatusRequest orderStatusRe
         user.setBalance(currentBalance.add(refundAmount));
         userRepository.save(user);
 
-        // ===== UPDATE ORDER =====
+        //
         order.setPaymentStatus(PaymentStatus.REFUNDED_SUCCESSFUL);
         order.setStatus(OrderStatus.RETURNED);
 

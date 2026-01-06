@@ -276,7 +276,7 @@ public class ChatService {
 
 
 
-    // 1 EXTRACT USER INTENT
+    //  EXTRACT USER INTENT
 
     private BigDecimal extractPrice(String q) {
         Pattern p = Pattern.compile("(\\d+)\\s*(triệu|tr|m)");
@@ -348,11 +348,16 @@ public class ChatService {
     }
 
 
-    // 2 FORMAT PRODUCT LIST
+    //  FORMAT PRODUCT LIST
 
-    private String formatOptions(List<ProductOption> list) {
+    private String formatOptions(List<ProductOption> list, boolean isFallback) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Danh sách gợi ý (tối đa 10):\n");
+        if (isFallback) {
+            sb.append("DANH SÁCH SẢN PHẨM ĐANG BÁN CHẠY (Gợi ý thay thế vì không tìm thấy máy đúng yêu cầu):\n");
+        } else {
+            sb.append("DANH SÁCH SẢN PHẨM PHÙ HỢP:\n");
+        }
+        //sb.append("Danh sách gợi ý (tối đa 10):\n");
 
         int i = 1;
         for (ProductOption o : list) {
@@ -380,35 +385,7 @@ public class ChatService {
 
         return sb.toString();
     }
-//    private String formatOptions(List<ProductOption> list) {
-//        StringBuilder sb = new StringBuilder();
-//        sb.append("Danh sách gợi ý (tối đa 10):\\n");
-//
-//        int i = 1;
-//        for (ProductOption o : list) {
-//            sb.append("#### ").append(i++).append(". ")
-//                    .append(o.getProduct().getName()).append("\n")
-//                    .append("- 💰 **Giá:** ").append(o.getPrice()).append(" VNĐ\n")
-//                    .append("- 🧠 **CPU:** ").append(nullSafe(o.getCpu())).append("\n")
-//                    .append("- 🎮 **GPU:** ").append(nullSafe(o.getGpu())).append("\n")
-//                    .append("- 🧩 **RAM:** ").append(nullSafe(o.getRam())).append("\n")
-//                    .append("- 🎨 **Màu:** ");
-//
-//            if (o.getProductVariants() != null && !o.getProductVariants().isEmpty()) {
-//                sb.append(
-//                        o.getProductVariants().stream()
-//                                .map(ProductVariant::getColor)
-//                                .reduce((a, b) -> a + ", " + b)
-//                                .orElse("-")
-//                );
-//            } else sb.append("-");
-//
-//            sb.append("\n\n");
-//
-//            if (i > 10) break;
-//        }
-//        return sb.toString();
-//    }
+
 
 
     private String nullSafe(String s) {
@@ -416,7 +393,7 @@ public class ChatService {
     }
 
 
-    // 3 GET COLOR INFO
+    //  GET COLOR INFO
 
     private String getColorsInfo(List<ProductOption> list) {
         if (list.isEmpty()) return "Không tìm thấy sản phẩm.";
@@ -446,7 +423,7 @@ public class ChatService {
     }
 
 
-    // 4 MAIN CHAT ENTRY
+    //  MAIN CHAT ENTRY
 
     public String handleChat(String question, Long userId) {
 
@@ -471,7 +448,7 @@ public class ChatService {
             );
         }
 
-        // 2 "MÀU GÌ" / "CÓ MÀU"
+        //  "MÀU GÌ" / "CÓ MÀU"
         if (lower.contains("màu gì") || lower.contains("có màu")) {
 
             // Tìm sản phẩm theo tên trong câu hỏi
@@ -490,10 +467,10 @@ public class ChatService {
             );
         }
 
-        // 3 NORMAL PRODUCT SEARCH
+        //  NORMAL PRODUCT SEARCH
         String dbContext = searchProductByQuestion(question);
 
-        // 4 SEND TO AI
+        //  SEND TO AI
         //return aiService.askLLM(question, dbContext);
         String answer = aiService.askLLMWithHistory(
                 question,
@@ -501,19 +478,17 @@ public class ChatService {
                 chatHistoryRepository.findLast10(userId)
         );
 
-
-
         saveAIHistory(userId, answer);
         return answer;
 
     }
 
-
-    // 5. PRODUCT SEARCH LOGIC
+    // PRODUCT SEARCH LOGIC
 
     private String searchProductByQuestion(String question) {
         String q = question.toLowerCase();
         List<ProductOption> list = new ArrayList<>();
+        boolean isFallback = false;
 
         // 1. Giá
         BigDecimal maxPrice = extractPrice(q);
@@ -563,10 +538,14 @@ public class ChatService {
         }
 
         if (list.isEmpty()) {
-            list = productOptionRepository.findTop10ByOrderByPriceAsc();
+            list = userViewHistoryRepository.findMostViewedProducts();
+            if (list.isEmpty()) {
+                list = productOptionRepository.findTop10ByOrderByPriceAsc();
+            }
+            //list = productOptionRepository.findTop10ByOrderByPriceAsc();
         }
 
-        return formatOptions(list);
+        return formatOptions(list, isFallback);
     }
 }
 

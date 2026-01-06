@@ -107,72 +107,35 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
 
-//public PaymentCheck setPaymentCheck(PaymentCheck paymentCheck) {
-//
-//    Order order = orderSerivce.findById(paymentCheck.getOrderId());
-//    User user = userAccountService.getUserById(paymentCheck.getUserId());
-//
-//    if (paymentCheck.getType() == 0) { //  thanh toán thành công
-//        order.setPaymentStatus(PaymentStatus.PAID);
-//
-//        Payment payment = new Payment();
-//        payment.setOrder(order);
-//        payment.setUser(user);
-//        payment.setAmount(paymentCheck.getAmount());
-//        payment.setPaymentDate(LocalDateTime.now());
-//        paymentRepository.save(payment);
-//
-//        //  GỬI EMAIL THÀNH CÔNG
-//        emailService.sendOrderSuccessEmail(
-//                order.getInfoUserReceive().getEmail(),
-//                order.getInfoUserReceive().getFullName(),
-//                "ORD-" + order.getId(),
-//                order.getOrderItems()
-//        );
-//
-//    } else { //  thanh toán thất bại
-//        order.setPaymentStatus(PaymentStatus.UNPAID);
-//
-//
-//        emailService.sendPaymentFailedEmail(
-//                order.getInfoUserReceive().getEmail(),
-//                order.getInfoUserReceive().getFullName(),
-//                "ORD-" + order.getId(),
-//                order.getOrderItems()
-//        );
-//    }
-//
-//    orderSerivce.saved(order);
-//    return paymentCheck;
-//}
+
 @Transactional
 public PaymentCheck setPaymentCheck(PaymentCheck paymentCheck) {
 
     Order order = orderSerivce.findById(paymentCheck.getOrderId());
     User user = userAccountService.getUserById(paymentCheck.getUserId());
 
-    if (paymentCheck.getType() == 0) { // ✅ thanh toán thành công
+    if (paymentCheck.getType() == 0) {
 
         order.setPaymentStatus(PaymentStatus.PAID);
 
         Payment payment = new Payment();
         payment.setOrder(order);
         payment.setUser(user);
-        payment.setAmount(order.getPaidAmount()); // ✅ dùng paidAmount
+        payment.setAmount(order.getPaidAmount());
         payment.setPaymentDate(LocalDateTime.now());
         paymentRepository.save(payment);
 
-        // ✅ GỬI EMAIL THÀNH CÔNG (DÙNG ORDER)
+        //
         emailService.sendOrderSuccessEmail(
                 order,
                 order.getOrderItems()
         );
 
-    } else { // ❌ thanh toán thất bại
+    } else { //
 
         order.setPaymentStatus(PaymentStatus.UNPAID);
 
-        // (email thất bại KHÔNG cần total → giữ nguyên)
+        //
         emailService.sendPaymentFailedEmail(
                 order.getInfoUserReceive().getEmail(),
                 order.getInfoUserReceive().getFullName(),

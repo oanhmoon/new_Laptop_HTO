@@ -87,7 +87,7 @@ public class ProductServiceImpl implements ProductService {
             throw new ConflictException("Tên sản phẩm đã tồn tại");
         }
 
-// ===== CHECK TRÙNG OPTION CODE (DB + REQUEST) =====
+
         Set<String> codes = new HashSet<>();
         for (var opt : productRequest.getOptions()) {
 
@@ -236,7 +236,7 @@ public class ProductServiceImpl implements ProductService {
 
                 option.setProduct(product);
 
-                // UPDATE FIELD PRIMITIVE (Thông số kỹ thuật)
+                //
                 option.setCode(oReq.getCode());
                 option.setPrice(oReq.getPrice());
                 option.setCpu(oReq.getCpu());

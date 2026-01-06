@@ -48,9 +48,6 @@ public class UserAccountServiceImpl implements UserAccountService {
     private final AuthenticationService authenticationService;
 
 
-    // Lưu OTP tạm thời trong bộ nhớ
-    //private final Map<String, String> otpCache = new ConcurrentHashMap<>();
-
     @Override
     public boolean existsByEmail(String email) {
         return userRepository.findByEmail(email) != null;
@@ -60,27 +57,27 @@ public class UserAccountServiceImpl implements UserAccountService {
     @Override
     @Transactional
     public RegisterReponse register(RegisterRequest request) {
-        // Validate username
+
         if (userRepository.findByUsername(request.getUsername()) != null) {
             throw new AppException(ErrorCode.USERNAME_EXISTS);
         }
 
-        //  Validate email format
+
         if (!Validation.isValidEmail(request.getEmail())) {
             throw new AppException(ErrorCode.INVALID_EMAIL_FORMAT);
         }
 
-        //  Validate email uniqueness
+
         if (userRepository.findByEmail(request.getEmail()) != null) {
             throw new AppException(ErrorCode.EMAIL_EXISTS);
         }
 
-        //  Validate password format
+
         if (!Validation.isValidPassword(request.getPassword())) {
             throw new AppException(ErrorCode.INVALID_PASSWORD_FORMAT);
         }
 
-        //  Nếu hợp lệ thì tạo user
+
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
