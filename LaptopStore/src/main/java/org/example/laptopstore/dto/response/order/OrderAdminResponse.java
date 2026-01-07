@@ -22,7 +22,8 @@ public class OrderAdminResponse {
     private PaymentStatus paymentStatus;
     private PaymentMethod paymentMethod;
     private String note;
-    private DiscountResponse discount;
+//    private DiscountResponse discount;
+    private BigDecimal discountAmount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private BigDecimal paidAmount;

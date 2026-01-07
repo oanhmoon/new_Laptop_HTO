@@ -42,10 +42,14 @@ public OrderAdminResponse toOrderAdminResponse(Order order) {
     res.setPaidAmount(order.getPaidAmount());
 
     // discount
-    if (order.getDiscount() != null && order.getDiscount().compareTo(BigDecimal.ZERO) >= 0) {
-        discountRepository.findById(order.getDiscount().longValue())
-                .ifPresent(d -> res.setDiscount(modelMapper.map(d, DiscountResponse.class)));
-    }
+//    if (order.getDiscount() != null && order.getDiscount().compareTo(BigDecimal.ZERO) >= 0) {
+//        discountRepository.findById(order.getDiscount().longValue())
+//                .ifPresent(d -> res.setDiscount(modelMapper.map(d, DiscountResponse.class)));
+//    }
+    res.setDiscountAmount(
+            order.getDiscount() != null ? order.getDiscount() : BigDecimal.ZERO
+    );
+
 
     List<OrderItemResponse> items = order.getOrderItems()
             .stream()

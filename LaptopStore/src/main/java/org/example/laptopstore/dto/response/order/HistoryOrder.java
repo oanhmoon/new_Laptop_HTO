@@ -22,7 +22,9 @@ public class HistoryOrder {
     private String email;
     private String numberPhone;
     private String detailAddress;
-    private BigDecimal discount;
+    //private BigDecimal discount;
+    private BigDecimal discountAmount;
+    private BigDecimal paidAmount;
     private OrderStatus orderStatus;
     private PaymentStatus paymentStatus;
     private PaymentMethod paymentMethod;

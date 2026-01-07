@@ -287,7 +287,10 @@ public class OrderServiceImpl implements OrderSerivce {
 
             historyOrder.setOrderItems(itemResponses);
             historyOrder.setOrderId(order.getId());
-            historyOrder.setDiscount(order.getDiscount());
+            //historyOrder.setDiscount(order.getDiscount());
+            historyOrder.setDiscountAmount(order.getDiscount());
+            historyOrder.setPaidAmount(order.getPaidAmount());
+
             historyOrder.setNumberPhone(order.getInfoUserReceive().getPhoneNumber());
             historyOrder.setEmail(order.getInfoUserReceive().getEmail());
             historyOrder.setOrderStatus(order.getStatus());
@@ -371,26 +374,79 @@ public class OrderServiceImpl implements OrderSerivce {
 
 @Override
 @Transactional
+//public OrderResponse updateStatus(Long orderId, OrderStatusRequest orderStatusRequest) {
+//
+//    Order order = orderRepository.findById(orderId)
+//            .orElseThrow(() -> new NotFoundException("Order not found"));
+//    OrderStatus oldStatus = order.getStatus();
+//    OrderStatus newStatus = orderStatusRequest.getStatus();
+//    //
+//    if (newStatus == OrderStatus.CANCELLED && oldStatus != OrderStatus.CANCELLED) {
+//        for (OrderItem oi : order.getOrderItems()) {
+//            ProductVariant pv = oi.getProductVariant();
+//            pv.setStock(pv.getStock() + oi.getQuantity());
+//            productVariantSerivce.save(pv);
+//        }
+//    }
+//    order.setStatus(newStatus);
+//
+//    // ===== CẬP NHẬT PAYMENT =====
+//    if (newStatus == OrderStatus.COMPLETED && order.getPaymentStatus() != PaymentStatus.PAID) {
+//        order.setPaymentStatus(PaymentStatus.PAID);
+//    }
+//    Order savedOrder = orderRepository.save(order);
+//    return new OrderResponse(savedOrder.getId());
+//}
 public OrderResponse updateStatus(Long orderId, OrderStatusRequest orderStatusRequest) {
 
     Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new NotFoundException("Order not found"));
+
     OrderStatus oldStatus = order.getStatus();
     OrderStatus newStatus = orderStatusRequest.getStatus();
-    //
+
+    // ================= HỦY ĐƠN =================
     if (newStatus == OrderStatus.CANCELLED && oldStatus != OrderStatus.CANCELLED) {
+
+        // HOÀN KHO
         for (OrderItem oi : order.getOrderItems()) {
             ProductVariant pv = oi.getProductVariant();
             pv.setStock(pv.getStock() + oi.getQuantity());
             productVariantSerivce.save(pv);
         }
-    }
-    order.setStatus(newStatus);
 
-    // ===== CẬP NHẬT PAYMENT =====
-    if (newStatus == OrderStatus.COMPLETED && order.getPaymentStatus() != PaymentStatus.PAID) {
-        order.setPaymentStatus(PaymentStatus.PAID);
+        // HOÀN TIỀN (NẾU ĐÃ THANH TOÁN)
+        if (order.getPaymentStatus() == PaymentStatus.PAID
+                && (order.getPaymentMethod() == PaymentMethod.IN_APP
+                || order.getPaymentMethod() == PaymentMethod.VNPAY)) {
+
+            BigDecimal refundAmount = order.getPaidAmount();
+
+            User user = order.getUser();
+            BigDecimal currentBalance =
+                    Optional.ofNullable(user.getBalance()).orElse(BigDecimal.ZERO);
+
+            user.setBalance(currentBalance.add(refundAmount));
+            userRepository.save(user);
+
+            order.setPaymentStatus(PaymentStatus.REFUNDED_SUCCESSFUL);
+        } else {
+            // COD hoặc chưa thanh toán
+            order.setPaymentStatus(PaymentStatus.FAILED);
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
     }
+
+    // ================= HOÀN THÀNH ĐƠN =================
+    if (newStatus == OrderStatus.COMPLETED) {
+        order.setStatus(OrderStatus.COMPLETED);
+
+        if (order.getPaymentStatus() != PaymentStatus.PAID) {
+            order.setPaymentStatus(PaymentStatus.PAID);
+        }
+    }
+
     Order savedOrder = orderRepository.save(order);
     return new OrderResponse(savedOrder.getId());
 }
