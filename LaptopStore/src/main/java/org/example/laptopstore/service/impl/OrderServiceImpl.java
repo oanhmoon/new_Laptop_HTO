@@ -415,14 +415,14 @@ public OrderResponse updateStatus(Long orderId, OrderStatusRequest orderStatusRe
             productVariantSerivce.save(pv);
         }
 
-        // HOÀN TIỀN (NẾU ĐÃ THANH TOÁN)
+        // HOÀN TIỀN
         if (order.getPaymentStatus() == PaymentStatus.PAID
                 && (order.getPaymentMethod() == PaymentMethod.IN_APP
                 || order.getPaymentMethod() == PaymentMethod.VNPAY)) {
 
             BigDecimal refundAmount = order.getPaidAmount();
-
             User user = order.getUser();
+
             BigDecimal currentBalance =
                     Optional.ofNullable(user.getBalance()).orElse(BigDecimal.ZERO);
 
@@ -431,15 +431,14 @@ public OrderResponse updateStatus(Long orderId, OrderStatusRequest orderStatusRe
 
             order.setPaymentStatus(PaymentStatus.REFUNDED_SUCCESSFUL);
         } else {
-            // COD hoặc chưa thanh toán
             order.setPaymentStatus(PaymentStatus.FAILED);
         }
 
         order.setStatus(OrderStatus.CANCELLED);
     }
 
-    // ================= HOÀN THÀNH ĐƠN =================
-    if (newStatus == OrderStatus.COMPLETED) {
+    // ================= HOÀN THÀNH =================
+    else if (newStatus == OrderStatus.COMPLETED) {
         order.setStatus(OrderStatus.COMPLETED);
 
         if (order.getPaymentStatus() != PaymentStatus.PAID) {
@@ -447,9 +446,15 @@ public OrderResponse updateStatus(Long orderId, OrderStatusRequest orderStatusRe
         }
     }
 
+    // ================= CÁC STATUS KHÁC =================
+    else {
+        order.setStatus(newStatus);
+    }
+
     Order savedOrder = orderRepository.save(order);
     return new OrderResponse(savedOrder.getId());
 }
+
 
     @Override
     public List<RevenueYear> revenueInYear() {

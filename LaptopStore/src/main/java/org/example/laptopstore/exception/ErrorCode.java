@@ -4,6 +4,7 @@ import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 import static org.example.laptopstore.util.Constant.*;
+//import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 @Getter
 public enum ErrorCode {
@@ -49,6 +50,14 @@ public enum ErrorCode {
 
     INVALID_PASSWORD(BAD_REQUEST, INVALID_PASSWORD_FAIL, HttpStatus.BAD_REQUEST,
             "Mật khẩu không chính xác, vui lòng thử lại"),
+    USER_BLOCKED(
+            FORBIDDEN,
+            USER_BLOCKED_MESSAGE,
+            HttpStatus.FORBIDDEN,
+            "Tài khoản của bạn hiện tại đang bị khóa"
+    ),
+
+
 
     INVALID_OTP(BAD_REQUEST, INVALID_OTP_FAIL, HttpStatus.BAD_REQUEST,
             "OTP không chính xác, vui lòng thử lại"),

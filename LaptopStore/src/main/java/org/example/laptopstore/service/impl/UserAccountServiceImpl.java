@@ -109,25 +109,49 @@ public class UserAccountServiceImpl implements UserAccountService {
         return userRepository.findById(idUser).orElseThrow();
     }
 
-    public LoginResponse login(LoginRequest request) throws ParseException {
-        User user = userRepository.findByUsername(request.getUsername());
-        if (user == null) throw new AppException(USER_NOT_FOUND);
+//    public LoginResponse login(LoginRequest request) throws ParseException {
+//        User user = userRepository.findByUsername(request.getUsername());
+//        if (user == null) throw new AppException(USER_NOT_FOUND);
+//
+//        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+//            throw new AppException(ErrorCode.INVALID_PASSWORD);
+//        }
+//
+//        String accessToken = generateToken(user);
+//
+//        return LoginResponse.builder()
+//                .accessToken(accessToken)
+//                .id(user.getId())
+//                .username(user.getUsername())
+//                .fullName(user.getFullName())
+//                .role(user.getRole().getName())
+//                .email(user.getEmail())
+//                .build();
+//    }
+public LoginResponse login(LoginRequest request) throws ParseException {
+    User user = userRepository.findByUsername(request.getUsername());
+    if (user == null) throw new AppException(USER_NOT_FOUND);
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new AppException(ErrorCode.INVALID_PASSWORD);
-        }
-
-        String accessToken = generateToken(user);
-
-        return LoginResponse.builder()
-                .accessToken(accessToken)
-                .id(user.getId())
-                .username(user.getUsername())
-                .fullName(user.getFullName())
-                .role(user.getRole().getName())
-                .email(user.getEmail())
-                .build();
+    if (Boolean.TRUE.equals(user.getIsBlocked())) {
+        throw new AppException(ErrorCode.USER_BLOCKED);
     }
+
+    if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        throw new AppException(ErrorCode.INVALID_PASSWORD);
+    }
+
+    String accessToken = generateToken(user);
+
+    return LoginResponse.builder()
+            .accessToken(accessToken)
+            .id(user.getId())
+            .username(user.getUsername())
+            .fullName(user.getFullName())
+            .role(user.getRole().getName())
+            .email(user.getEmail())
+            .build();
+}
+
 
     private String generateToken(User user) throws ParseException {
         return authenticationService.authenticate(user).getAccessToken();

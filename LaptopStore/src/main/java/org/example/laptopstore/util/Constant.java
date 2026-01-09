@@ -12,6 +12,10 @@ public class Constant {
     public static final String SUCCESS_MESSAGE = "Success";
     public static final String CREATE_NEW_TOKEN = "Create token success";
 
+    public static final int FORBIDDEN = 403;
+    public static final String USER_BLOCKED_MESSAGE = "Tài khoản của bạn hiện tại bị khóa";
+
+
     public static final String PASSWORD_CHANGE_SUCESSFUL = "Password changed successfully";
     // Error Messages
     public static final String REQUEST_FAILD = "Request failed";

@@ -37,7 +37,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-//    private static final String[] AUTH_WHITELIST = {
+    //    private static final String[] AUTH_WHITELIST = {
 //            "api/v1/auth/login",
 //            "api/v1/auth/register",
 //            "/api/v1/brands/all",
@@ -53,20 +53,20 @@ public class SecurityConfig {
 //            "api/v1/provinces/**"
 //
 //    };
-private static final String[] AUTH_WHITELIST = {
-        "/api/v1/auth/**",
-        "/api/v1/brands/all",
-        "/api/v1/categories/all",
-        "/api/v1/discounts/**",
-        "/api/v1/products/**",
-        "/api/v1/products/feature",
-        "/api/v1/product-reviews/**",
-        "/api/v1/countries/**",
-        "/api/v1/districts/**",
-        "/api/v1/wards/**",
-        "/api/v1/provinces/**",
-        "/ws/**"
-};
+    private static final String[] AUTH_WHITELIST = {
+            "/api/v1/auth/**",
+            "/api/v1/brands/all",
+            "/api/v1/categories/all",
+            "/api/v1/discounts/**",
+            "/api/v1/products/**",
+            "/api/v1/products/feature",
+            "/api/v1/product-reviews/**",
+            "/api/v1/countries/**",
+            "/api/v1/districts/**",
+            "/api/v1/wards/**",
+            "/api/v1/provinces/**",
+            "/ws/**"
+    };
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity)
